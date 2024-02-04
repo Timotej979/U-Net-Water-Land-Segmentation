@@ -49,3 +49,11 @@ class DatasetSplitter():
         for file in self.test:
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test', 'images'))
             shutil.copy(os.path.join(self.root, 'WASR', file), os.path.join(self.root, 'test', 'masks'))
+
+    def threshold_masks(self):
+        # Threshold images in the masks folder
+        for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
+            mask = cv2.imread(os.path.join(self.root, 'train', 'masks', file), cv2.IMREAD_RGB)
+            # Check if color of the image is RGB [247, 195, 37] then set to 255 else 0
+            mask = np.where(mask == [247, 195, 37], 255, 0)
+            cv2.imwrite(os.path.join(self.root, 'train', 'masks', file), mask)

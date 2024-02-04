@@ -25,7 +25,7 @@ class ModelController():
 
     def __init__(self, opt):
         self.opt = opt
-        self.self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def calculate_iou(predictions, masks):
         # Calculate the intersection over union
