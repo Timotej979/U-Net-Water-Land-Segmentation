@@ -14,38 +14,42 @@ from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+from prepare_dataset import PrepareDataset
 from custom_dataset import DatasetFolder
 from network import UNet
 
 
-class ModelController():
+class ModelControler():
     '''
     Train the UNet model on the Water/Land segmentation dataset.
     '''
 
     def __init__(self, opt):
+        # Set the command line arguments
         self.opt = opt
+
+        # Dataset initialization
+        self.dataset_preparation_class = PrepareDataset(self.opt.datasetRoot, self.opt.trainRatio)
+
+        # Model initialization
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    def calculate_iou(predictions, masks):
-        # Calculate the intersection over union
-        pred = torch.squeeze(predictions)
-        gt = torch.squeeze(masks)
+    # Function to prepare the dataset
+    def prepare_dataset(self):
+        # Split the dataset into train and test directories
+        self.dataset_preparation_class.split_dataset()
+        # Threshold the masks
+        self.dataset_preparation_class.threshold_masks()
 
-        # Convert to binary
-        intersection = torch.logical_and(pred, gt)
-        union = torch.logical_or(pred, gt)
-        iou = torch.sum(intersection) / torch.sum(union)
-        return iou.mean()
-
-    def train():
+    # Function to train the model
+    def train(self):
         # Define the mean and standard deviation of the dataset
 
         PRE__MEAN = [0.5, 0.5, 0.5]
         PRE__STD = [0.5, 0.5, 0.5]
         
         # Define transforms for dataset augmentation
-        image_and_mask_transform_train=A.Compose([A.Resize(opt.imagesize[0], opt.imagesize[1]),
+        image_and_mask_transform_train=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
@@ -53,26 +57,31 @@ class ModelController():
         image_only_transform_train=A.Compose([A.Normalize(PRE__MEAN, PRE__STD),
                                             A.RandomBrightnessContrast()])
         
-        image_and_mask_transform_test=A.Compose([A.Resize(opt.imagesize[0], opt.imagesize[1]),
+        image_and_mask_transform_test=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
         
         image_only_transform_test=A.Compose([A.Normalize(PRE__MEAN, PRE__STD)])
         
-        # Define dataloaders
-        train_data = DatasetFolder(root=opt.trainroot, image_only_transform=image_only_transform_train, transform=image_and_mask_transform_train)
-        test_data = DatasetFolder(root=opt.testroot, image_only_transform=image_only_transform_test, transform=image_and_mask_transform_test)
+        # Define DatasetFolder and DataLoader
+        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train'),
+                                   image_only_transform=image_only_transform_train,
+                                   transform=image_and_mask_transform_train)
 
-        trainloader = DataLoader(train_data, opt.batchsize, shuffle=True)
-        testloader = DataLoader(test_data, opt.batchsize, shuffle=False)
+        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test'),
+                                  image_only_transform=image_only_transform_test,
+                                  transform=image_and_mask_transform_test)
+
+        trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
+        testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
 
         print(f"Train dataset stats: number of images: {len(train_data)}")
         print(f"Test dataset stats: number of images: {len(test_data)}")
 
-        if not os.path.exists('./output'):
-            os.mkdir('./output')
-        logfile = os.path.join('./output/log.txt')
+        if not os.path.exists('/output'):
+            os.mkdir('/output')
+        logfile = os.path.join('/output/log.txt')
 
         # Load the CNN model
         model = UNet().to(self.device)
@@ -104,8 +113,8 @@ class ModelController():
         start_time = time.time()
         break_flag = False
 
-        for epoch in range(opt.epochs):
-            print("Training epoch: {}/{}".format(epoch+1, opt.epochs))
+        for epoch in range(self.opt.epochs):
+            print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
             model.train()
 
@@ -146,7 +155,7 @@ class ModelController():
                         
                         # Calculate IoU for training data
                         predicted_masks_bin = torch.sigmoid(out) > 0.5
-                        iou.append(calculate_iou(predicted_masks_bin, masks).cpu().numpy())
+                        iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
 
                         avg_val_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
@@ -201,23 +210,50 @@ class ModelController():
 
         plt.show()
 
-
-
-
-
+    # Function to calculate the intersection over union of the model
+    def calculate_iou(predictions, masks):
+        # Calculate the intersection over union
+        pred = torch.squeeze(predictions)
+        gt = torch.squeeze(masks)
+        # Convert to binary
+        intersection = torch.logical_and(pred, gt)
+        union = torch.logical_or(pred, gt)
+        iou = torch.sum(intersection) / torch.sum(union)
+        return iou.mean()
 
 # MAIN
 if __name__ == "__main__":
 
     # arguments that can be defined upon execution of the script
     options = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # options.add_argument('--train', action='store_true', help='Train the model.')
-    # options.add_argument('--test', action='store_true', help="Test the model.")
-    options.add_argument('--trainroot', default='dataset/train', help='Root directory of the tomato train dataset')
-    options.add_argument('--testroot', default='dataset/test', help='Root directory of the tomato test dataset')
+    # Model control
+    options.add_argument('--prepare', action='store_true', help='Prepare the dataset.')
+    options.add_argument('--train', action='store_true', help='Train the model.')
+    options.add_argument('--test', action='store_true', help="Test the model.")
+    # Configuration
+    options.add_argument('--datasetRoot', type=str, default='/dataset', help='Root directory of the dataset')
+    options.add_argument('--trainRatio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--batchsize', type=int, default=2, help='Batch size')
     options.add_argument('--imagesize', type=int, default=(512,384), help='Size of the image (height, width)')
     options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
     opt = options.parse_args()
+
+    # Initialize the model controler
+    model_controler = ModelControler(opt)
+
+    # Prepare the dataset
+    if opt.prepare:
+        print("Preparing the dataset...")
+        model_controler.prepare_dataset()
+
+    # Train the model
+    if opt.train:
+        print("Training the model...")
+        model_controler.train()
+    
+    # Test the model
+    if opt.test:
+        print("Testing the model...")
+        model_controler.test()
 
     

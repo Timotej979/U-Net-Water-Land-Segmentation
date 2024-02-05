@@ -19,7 +19,6 @@ def pil_loader(path: str) -> Image.Image:
         img = Image.open(f)
         return img.convert("RGB")
 
-# TODO: specify the return type
 def accimage_loader(path: str) -> Any:
     import accimage
 
@@ -28,7 +27,6 @@ def accimage_loader(path: str) -> Any:
     except OSError:
         # Potentially a decoding problem, fall back to PIL.Image
         return pil_loader(path)
-
 
 def default_loader(path: str) -> Any:
     from torchvision import get_image_backend
@@ -242,7 +240,7 @@ class DatasetFolder(VisionDataset):
         # For each image, find its corresponding mask
         for img in img_paths:
             img_path = os.path.join(img_dir, img)
-            mask_path = os.path.join(mask_dir, img)
+            mask_path = os.path.join(mask_dir, img.replace('.jpg', '.png'))
 
             # Check if file exists
             if not os.path.isfile(img_path):
