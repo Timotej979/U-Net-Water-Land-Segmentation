@@ -106,3 +106,74 @@ class PrepareDataset():
             mask = np.where(mask, 255, 0).astype(np.uint8)
             mask_image = Image.fromarray(mask)
             mask_image.save(mask_path)
+
+    def resize_images_and_masks(self, size, preserve_aspect_ratio):
+        if preserve_aspect_ratio:
+            # Resize images in the images folder to the specified size while preserving aspect ratio
+            for file in os.listdir(os.path.join(self.root, 'train', 'images')):
+                image_path = os.path.join(self.root, 'train', 'images', file)
+                image = Image.open(image_path)
+                image.thumbnail(size)
+                image.save(image_path)
+
+            for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
+                mask_path = os.path.join(self.root, 'train', 'masks', file)
+                mask = Image.open(mask_path)
+                mask.thumbnail(size)
+                mask.save(mask_path)
+
+            for file in os.listdir(os.path.join(self.root, 'val', 'images')):
+                image_path = os.path.join(self.root, 'val', 'images', file)
+                image = Image.open(image_path)
+                image.thumbnail(size)
+                image.save(image_path)
+            
+            for file in os.listdir(os.path.join(self.root, 'val', 'masks')):
+                mask_path = os.path.join(self.root, 'val', 'masks', file)
+                mask = Image.open(mask_path)
+                mask.thumbnail(size)
+                mask.save(mask_path)
+
+            for file in os.listdir(os.path.join(self.root, 'test', 'images')):
+                image_path = os.path.join(self.root, 'test', 'images', file)
+                image = Image.open(image_path)
+                image.thumbnail(size)
+                image.save(image_path)
+            
+            for file in os.listdir(os.path.join(self.root, 'test', 'masks')):
+                mask_path = os.path.join(self.root, 'test', 'masks', file)
+                mask = Image.open(mask_path)
+                mask.thumbnail(size)
+                mask.save(mask_path)
+
+        else:
+            # Resize images in the images folder to the specified size
+            for file in os.listdir(os.path.join(self.root, 'train', 'images')):
+                image_path = os.path.join(self.root, 'train', 'images', file)
+                image = Image.open(image_path).resize(size)
+                image.save(image_path)
+
+            for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
+                mask_path = os.path.join(self.root, 'train', 'masks', file)
+                mask = Image.open(mask_path).resize(size)
+                mask.save(mask_path)
+
+            for file in os.listdir(os.path.join(self.root, 'val', 'images')):
+                image_path = os.path.join(self.root, 'val', 'images', file)
+                image = Image.open(image_path).resize(size)
+                image.save(image_path)
+
+            for file in os.listdir(os.path.join(self.root, 'val', 'masks')):
+                mask_path = os.path.join(self.root, 'val', 'masks', file)
+                mask = Image.open(mask_path).resize(size)
+                mask.save(mask_path)
+
+            for file in os.listdir(os.path.join(self.root, 'test', 'images')):
+                image_path = os.path.join(self.root, 'test', 'images', file)
+                image = Image.open(image_path).resize(size)
+                image.save(image_path)
+            
+            for file in os.listdir(os.path.join(self.root, 'test', 'masks')):
+                mask_path = os.path.join(self.root, 'test', 'masks', file)
+                mask = Image.open(mask_path).resize(size)
+                mask.save(mask_path)
