@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Run the environment initialization script
+source .env
+
 # Set the dataset and output directory
 DATASET_DIR=$(pwd)/dataset
 OUTPUT_DIR=$(pwd)/output
