@@ -28,7 +28,7 @@ COPY requirements.txt /app/requirements.txt
 
 # Install Python dependencies
 RUN pip3 install -r requirements.txt && \
-    pip3 install -U retinaface_pytorch && \
+    pip3 install wandb && \
     apt-get clean
 
 # Copy the rest of the files

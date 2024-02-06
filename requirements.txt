@@ -6,5 +6,6 @@ torchmetrics
 numpy
 opencv-python
 tqdm
+wandb
 albumentations
 matplotlib

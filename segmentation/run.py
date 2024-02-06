@@ -3,6 +3,8 @@ import os, time, datetime, argparse
 import numpy as np
 from tqdm import tqdm
 
+import wandb
+
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -33,6 +35,9 @@ class ModelControler():
 
         # Model initialization
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Wandb initialization
+        wandb.init(project="UNet_water_land_segmentation", entity="train & test")
 
     # Function to prepare the dataset
     def prepare_dataset(self):
@@ -76,6 +81,16 @@ class ModelControler():
         trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
         testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
 
+        # Log the dataset statistics
+        wandb.log({"Starting training..."})
+        wandb.log({"Train dataset size": len(train_data), "Test dataset size": len(test_data)})
+        wandb.log({"Batch size": self.opt.batchsize})
+        wandb.log({"Image size": self.opt.imagesize})
+        wandb.log({"Number of epochs": self.opt.epochs})
+        wandb.log({"Device": self.device})
+        wandb.log({"Dataset root": self.opt.datasetRoot})
+        wandb.log({"Train ratio": self.opt.trainRatio})
+
         print(f"Train dataset stats: number of images: {len(train_data)}")
         print(f"Test dataset stats: number of images: {len(test_data)}")
 
@@ -114,6 +129,7 @@ class ModelControler():
         break_flag = False
 
         for epoch in range(self.opt.epochs):
+            wandb.log({"Epoch": epoch+1})
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
             model.train()
@@ -137,6 +153,7 @@ class ModelControler():
                     optimizer.step() # optimize weights for the next batch
                 
                 avg_loss = avg_loss/len(train_data)
+                wandb.log({"Average train loss": avg_loss})
                 print("Epoch {}: average  train loss: {:.7f}".format(epoch+1, avg_loss))
                 train_loss_over_time.append(avg_loss)
 
@@ -167,10 +184,15 @@ class ModelControler():
 
                 # save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
+                    wandb.log({"New best found"})
+                    wandb.log({"Current best IoU": iou})
+                    wandb.log({"Current best val loss": avg_val_loss})
+                    wandb.log({"Current best epoch": epoch+1})
+                    print(f"New best found. Current best IoU: {iou}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './output/CNN_weights.pth')
                     best_iou = iou
-                    print(f'New best')
 
+                wandb;log({"Average IOU": iou, "Best IOU": best_iou, "Val loss": avg_val_loss})
                 print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou, avg_val_loss))
 
                 with open(logfile, 'a') as file:
