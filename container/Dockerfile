@@ -20,6 +20,8 @@ RUN apt-get -y update && \
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y libgl1-mesa-dev cmake python3-pip libopencv-dev git
 
+WORKDIR /app
+
 # Copy the requirements
 COPY requirements.txt requirements.txt
 

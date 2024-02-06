@@ -258,7 +258,7 @@ if __name__ == "__main__":
     options.add_argument('--train', action='store_true', help='Train the model.')
     options.add_argument('--test', action='store_true', help="Test the model.")
     # Configuration
-    options.add_argument('--datasetRoot', type=str, default='/dataset', help='Root directory of the dataset')
+    options.add_argument('--datasetRoot', type=str, default='/app/container/dataset', help='Root directory of the dataset')
     options.add_argument('--trainTestRatio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--trainValRatio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
     options.add_argument('--batchsize', type=int, default=2, help='Batch size')

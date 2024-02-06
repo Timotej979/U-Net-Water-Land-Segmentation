@@ -20,7 +20,7 @@ class PrepareDataset():
     def __init__(self, root, train_val_ratio, train_test_ratio):
         # Initialize the root directory and the train and test ratios
         self.root = root
-        self.train__val_ratio = train_val_ratio
+        self.train_val_ratio = train_val_ratio
         self.train_test_ratio = train_test_ratio
         # Initialize the train, val and test lists
         self.train = []
@@ -69,6 +69,11 @@ class PrepareDataset():
         for file in self.test:
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test', 'images'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'test', 'masks'))
+
+        # Print size of train, val and test datasets
+        print(f"Train images: {len(self.train)}")
+        print(f"Val images: {len(self.val)}")
+        print(f"Test images: {len(self.test)}")
 
     def threshold_masks(self):
         # Threshold images in the masks folder using the color and error threshold
