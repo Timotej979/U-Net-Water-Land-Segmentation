@@ -2,21 +2,15 @@ version: '3.8'
 
 services:
   # Service for running the segmentation detection models: UNet and YOLOv8
-  segmentation_detection_service:
-    container_name: segmentation_detection_service
+  unet_yolo_container:
     build:
       context: ./container
 
     volumes:
-      - ${PWD}/container:/container
-      - ${PWD}/dataset:/dataset
+      - ./container:/app/container
 
     environment:
       - WANDB_API_KEY=${WANDB_API_KEY}
       - WANDB_ENTITY=${WANDB_ENTITY}
       
-    command: ["bash", "-c", "python3 /container/segmentation/run.py && exit 0"]
-
-volumes:
-  dataset:
-    external: true
+    command: ["bash", "-c", "cd /app/container && chmod +x runSegDet.sh && ./runSegDet.sh"]
