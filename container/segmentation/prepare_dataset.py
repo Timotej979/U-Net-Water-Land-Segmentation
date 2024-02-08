@@ -84,7 +84,7 @@ class PrepareDataset():
             mask_diff = np.abs(mask_array - self.threshold_color)
             mask = np.all(mask_diff < self.threshold_error, axis=-1)
             mask = np.where(mask, 255, 0).astype(np.uint8)
-            mask_image = Image.fromarray(mask, mnode="L") 
+            mask_image = Image.fromarray(mask, mode="L") 
             mask_image.save(mask_path)
 
         for file in os.listdir(os.path.join(self.root, 'val', 'masks')):

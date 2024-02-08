@@ -8,7 +8,6 @@ import wandb
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from torchmetrics.classification import BinaryJaccardIndex
 
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -26,6 +25,14 @@ from network import UNet
 class ModelControler():
     '''
     Train the UNet model on the Water/Land segmentation dataset.
+
+    Functions:
+    - __init__(self, opt): Initialize the model controler
+    - calculate_iou(predictions, masks): Calculate the intersection over union of the model (Static method)
+    - prepare_dataset_folder(self): Prepare the dataset folder
+    - load_dataset(self): Load the dataset
+    - train(self): Train the model
+    - test(self): Test the model
     '''
 
     def __init__(self, opt):
@@ -41,23 +48,23 @@ class ModelControler():
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Wandb initialization
-        wandb.init(project="U-Net-Water-Land-segmentation", entity="Segmentation", config={ # Model configuration
-                                                                                            "hidden_layer_sizes": [64, 128, 256, 512, 1024],
-                                                                                            "kernel_sizes": [3, 3, 3, 3, 3],
-                                                                                            "activation": "ReLU",
-                                                                                            "pool_sizes": [2, 2, 2, 2, 2],
-                                                                                            "dropout": 0.5,
-                                                                                            # Binary classification: water or land
-                                                                                            "num_classes": 1,
-                                                                                            # Training configuration
-                                                                                            "learning_rate": self.learning_rate,
-                                                                                            "betas": self.betas,
-                                                                                            "epochs": self.opt.epochs,
-                                                                                            "batch_size": self.opt.batchsize,
-                                                                                        })
+        wandb.init(project="U-Net-Water-Land-Segmentation", config={ # Model configuration
+                                                                    "hidden_layer_sizes": [64, 128, 256, 512, 1024],
+                                                                    "kernel_sizes": [3, 3, 3, 3, 3],
+                                                                    "activation": "ReLU",
+                                                                    "pool_sizes": [2, 2, 2, 2, 2],
+                                                                    "dropout": 0.5,
+                                                                    # Binary classification: water or land
+                                                                    "num_classes": 1,
+                                                                    # Training configuration
+                                                                    "learning_rate": self.learning_rate,
+                                                                    "betas": self.betas,
+                                                                    "epochs": self.opt.epochs,
+                                                                    "batch_size": self.opt.batchsize,
+                                                                })
 
-        # Load the dataset
-        self.load_dataset()
+        # Define the transformations
+        self.define_transformations()
 
     # Function to calculate the intersection over union of the model
     @staticmethod
@@ -82,51 +89,45 @@ class ModelControler():
         if self.opt.resize_prepaired:
             self.dataset_preparation_class.resize_images_and_masks(self.opt.resize_prepaired_size, self.opt.resize_prepaired_preserve_aspect_ratio)
 
-    # Function to load the dataset
-    def load_dataset(self):
+    # Function to define image transformations
+    def define_transformations(self):
         # Define the mean and standard deviation of the dataset
         PRE_MEAN = [0.5, 0.5, 0.5]
         PRE_STD = [0.5, 0.5, 0.5]
         
         # Define transforms for dataset augmentation
-        image_and_mask_transform_train=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
+        self.image_and_mask_transform_train=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
         
-        image_only_transform_train=A.Compose([A.Normalize(PRE_MEAN, PRE_STD),
+        self.image_only_transform_train=A.Compose([A.Normalize(PRE_MEAN, PRE_STD),
                                             A.RandomBrightnessContrast()])
         
-        image_and_mask_transform_test=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
+        self.image_and_mask_transform_test=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
         
-        image_only_transform_test=A.Compose([A.Normalize(PRE_MEAN, PRE_STD)])
-        
-        # Initialize train, validation and test datasets
-        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train'),
-                                   image_only_transform=image_only_transform_train,
-                                   transform=image_and_mask_transform_train)
-
-        val_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'val'),
-                                 image_only_transform=image_only_transform_test,
-                                 transform=image_and_mask_transform_test)
-
-        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test'),
-                                 image_only_transform=image_only_transform_test,
-                                 transform=image_and_mask_transform_test)
-
-        self.trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
-        self.valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
-        self.testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
-
-        print(f"Train dataset stats: number of images: {len(self.train_data)}")
-        print(f"Validation dataset stats: number of images: {len(self.val_data)}")
-        print(f"Test dataset stats: number of images: {len(self.test_data)}")
+        self.image_only_transform_test=A.Compose([A.Normalize(PRE_MEAN, PRE_STD)])
 
     # Function to train the model
     def train(self):
+        # Initialize train and validation datasets
+        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train'),
+                                   image_only_transform=self.image_only_transform_train,
+                                   transform=self.image_and_mask_transform_train)
+
+        val_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'val'),
+                                 image_only_transform=self.image_only_transform_test,
+                                 transform=self.image_and_mask_transform_test)
+
+        print(f"Train dataset stats: number of images: {len(train_data)}")
+        print(f"Validation dataset stats: number of images: {len(val_data)}")
+
+        trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
+        valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
+
         # Create the output directory
         if not os.path.exists('./output'):
             os.mkdir('./output')
@@ -158,7 +159,7 @@ class ModelControler():
 
             try:
                 # Train
-                for images, masks, img_paths, mask_paths in tqdm(self.trainloader):
+                for images, masks, img_paths, mask_paths in tqdm(trainloader):
 
                     images, masks = images.to(self.device), masks.to(self.device)
                     optimizer.zero_grad() # Set all gradients to 0
@@ -184,7 +185,7 @@ class ModelControler():
                 avg_val_loss = []
 
                 with torch.no_grad():
-                    for images, masks, img_paths, mask_paths in self.valloader:
+                    for images, masks, img_paths, mask_paths in valloader:
                         images, masks = images.to(self.device), masks.to(self.device)
 
                         # Feedforward, softmax
@@ -252,6 +253,15 @@ class ModelControler():
 
     # Function to test the model
     def test(self):
+        # Initialize the test dataset
+        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test'),
+                                    image_only_transform=self.image_only_transform_test,
+                                    transform=self.image_and_mask_transform_test)
+
+        print(f"Test dataset stats: number of images: {len(test_data)}")
+
+        testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
+
         # Load the CNN model, loss_function and weights
         model = UNet().to(self.device)
         l_bce = nn.BCEWithLogitsLoss()
@@ -268,7 +278,7 @@ class ModelControler():
         start_time = time.time()
 
         with torch.no_grad():
-            for images, masks, _, _ in tqdm(self.testloader):
+            for images, masks, _, _ in self.testloader:
                 images, masks = images.to(self.device), masks.to(self.device)
 
                 # Feedforward, softmax
