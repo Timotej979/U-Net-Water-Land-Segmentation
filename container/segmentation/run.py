@@ -149,7 +149,7 @@ class ModelControler():
         start_time = time.time()
 
         for epoch in range(self.opt.epochs):
-            wandb.log({"Epoch": epoch+1})
+            wandb.log({"epoch": epoch+1})
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
             model.train()
@@ -171,9 +171,10 @@ class ModelControler():
                     optimizer.step() # optimize weights for the next batch
 
                     # Log the results
-                    wandb.log({"Train Loss": loss})
+                    wandb.log({"train/loss": loss})
                 
                 avg_loss = avg_loss/len(train_data)
+                wandb.log({"train/avg_loss": avg_loss})
                 print("Epoch {}: average  train loss: {:.7f}".format(epoch+1, avg_loss))
                 train_loss_over_time.append(avg_loss)
 
@@ -196,8 +197,7 @@ class ModelControler():
                         avg_val_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
                         # Log the results
-                        wandb.log({"Validation Loss": avg_val_loss[-1]})
-                        wandb.log({"Validation IoU": iou[-1]})
+                        wandb.log({"val/loss": avg_val_loss[-1], "val/iou": iou[-1]})
 
                 # Calculate the average IoU and loss over the validation set
                 iou = np.mean(iou) 
@@ -208,9 +208,11 @@ class ModelControler():
                 # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
                     print(f"New best found. Current best IoU: {iou}")
+                    wandb.log({"train_val/best_iou": iou})
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './output/CNN_weights.pth')
                     best_iou = iou
 
+                wandb.log({"val/avg_loss": avg_val_loss, "val/avg_iou": iou})
                 print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou, avg_val_loss))
 
                 # Log the results
@@ -256,9 +258,11 @@ class ModelControler():
         model.load_state_dict(torch.load('./output/CNN_weights.pth')['state_dict'])
         model.eval()
 
-        # Initialize the lists to store the loss and accuracy over time
+        # Initialize the lists to store the loss, accuracy and predictions
         iou = []
         avg_test_loss = []
+        all_labels = []
+        all_predictions = []
 
         # Start testing
         start_time = time.time()
@@ -271,13 +275,17 @@ class ModelControler():
                 predictions = model(images)
 
                 predicted_masks_bin = torch.sigmoid(images) > 0.5
-                iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
+                
+                # Flatten the masks and predictions
+                all_labels.extend(masks.cpu().numpy().flatten())
+                all_predictions.extend(predicted_masks_bin.cpu().numpy().flatten())
 
+                # Calculate IoU and loss for test data
+                iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
                 avg_test_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
                 # Log the results
-                wandb.log({"Test Loss": avg_test_loss[-1]})
-                wandb.log({"Test IoU": iou[-1]})
+                wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1]})
 
         # Print total testing time
         end_time = time.time()
@@ -290,6 +298,21 @@ class ModelControler():
 
         print("Average Test IOU: {:.7f}, Test loss: {:.7f}".format(iou, avg_test_loss))
 
+        # Plot the ROC curve
+        fpr, tpr, thresholds = roc_curve(all_labels, all_predictions)
+        roc_auc = auc(fpr, tpr)
+
+        plt.figure(figsize=(15, 10))
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate', fontsize=18)
+        plt.ylabel('True Positive Rate', fontsize=18)
+        plt.title('Receiver Operating Characteristic', fontsize=18)
+        plt.legend(loc="lower right", fontsize=18)
+        filename = f'roc.svg'
+        plt.savefig(os.path.join('./output', filename))
 
 
 
