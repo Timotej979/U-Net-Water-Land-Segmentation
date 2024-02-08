@@ -3,7 +3,7 @@ import os, time, datetime, argparse
 import numpy as np
 from tqdm import tqdm
 
-# import wandb
+import wandb
 
 import torch
 from torch.utils.data import DataLoader
@@ -12,6 +12,8 @@ from torchmetrics.classification import BinaryJaccardIndex
 
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+
+from sklearn.metrics import roc_curve, auc
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -29,18 +31,49 @@ class ModelControler():
     def __init__(self, opt):
         # Set the command line arguments
         self.opt = opt
-
+        
         # Dataset initialization
         self.dataset_preparation_class = PrepareDataset(self.opt.datasetRoot, self.opt.trainValRatio, self.opt.trainTestRatio)
 
-        # Model initialization
+        # Model hyperparameter and device initialization
+        self.learning_rate = 0.0001
+        self.betas = (0.9, 0.999)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        #Wandb initialization
-        #wandb.init(project="UNet_water_land_segmentation", entity="train & test")
+        # Wandb initialization
+        wandb.init(project="U-Net-Water-Land-segmentation", entity="Segmentation", config={ # Model configuration
+                                                                                            "hidden_layer_sizes": [64, 128, 256, 512, 1024],
+                                                                                            "kernel_sizes": [3, 3, 3, 3, 3],
+                                                                                            "activation": "ReLU",
+                                                                                            "pool_sizes": [2, 2, 2, 2, 2],
+                                                                                            "dropout": 0.5,
+                                                                                            # Binary classification: water or land
+                                                                                            "num_classes": 1,
+                                                                                            # Training configuration
+                                                                                            "learning_rate": self.learning_rate,
+                                                                                            "betas": self.betas,
+                                                                                            "epochs": self.opt.epochs,
+                                                                                            "batch_size": self.opt.batchsize,
+                                                                                        })
 
-    # Function to prepare the dataset
-    def prepare_dataset(self):
+        # Load the dataset
+        self.load_dataset()
+
+    # Function to calculate the intersection over union of the model
+    @staticmethod
+    def calculate_iou(predictions, masks):
+        # Calculate the intersection over union
+        pred = torch.squeeze(predictions)
+        gt = torch.squeeze(masks)
+        # Convert to binary
+        intersection = torch.logical_and(pred, gt)
+        union = torch.logical_or(pred, gt)
+        iou = torch.sum(intersection) / torch.sum(union)
+        return iou.mean()
+
+    #######################################################################################################################
+    # Function to prepare the dataset folder
+    def prepare_dataset_folder(self):
         # Split the dataset into train and test directories
         self.dataset_preparation_class.split_dataset()
         # Threshold the masks
@@ -49,12 +82,11 @@ class ModelControler():
         if self.opt.resize_prepaired:
             self.dataset_preparation_class.resize_images_and_masks(self.opt.resize_prepaired_size, self.opt.resize_prepaired_preserve_aspect_ratio)
 
-    # Function to train the model
-    def train(self):
+    # Function to load the dataset
+    def load_dataset(self):
         # Define the mean and standard deviation of the dataset
-
-        PRE__MEAN = [0.5, 0.5, 0.5]
-        PRE__STD = [0.5, 0.5, 0.5]
+        PRE_MEAN = [0.5, 0.5, 0.5]
+        PRE_STD = [0.5, 0.5, 0.5]
         
         # Define transforms for dataset augmentation
         image_and_mask_transform_train=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
@@ -62,7 +94,7 @@ class ModelControler():
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
         
-        image_only_transform_train=A.Compose([A.Normalize(PRE__MEAN, PRE__STD),
+        image_only_transform_train=A.Compose([A.Normalize(PRE_MEAN, PRE_STD),
                                             A.RandomBrightnessContrast()])
         
         image_and_mask_transform_test=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
@@ -70,9 +102,9 @@ class ModelControler():
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
         
-        image_only_transform_test=A.Compose([A.Normalize(PRE__MEAN, PRE__STD)])
+        image_only_transform_test=A.Compose([A.Normalize(PRE_MEAN, PRE_STD)])
         
-        # Define DatasetFolder and DataLoader
+        # Initialize train, validation and test datasets
         train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train'),
                                    image_only_transform=image_only_transform_train,
                                    transform=image_and_mask_transform_train)
@@ -82,47 +114,28 @@ class ModelControler():
                                  transform=image_and_mask_transform_test)
 
         test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test'),
-                                  image_only_transform=image_only_transform_test,
-                                  transform=image_and_mask_transform_test)
+                                 image_only_transform=image_only_transform_test,
+                                 transform=image_and_mask_transform_test)
 
-        trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
-        valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
-        testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
+        self.trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
+        self.valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
+        self.testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
 
-        # Log the dataset statistics
-        #wandb.log({"Starting training..."})
-        #wandb.log({"Train dataset size": len(train_data), "Test dataset size": len(test_data)})
-        #wandb.log({"Batch size": self.opt.batchsize})
-        #wandb.log({"Image size": self.opt.imagesize})
-        #wandb.log({"Number of epochs": self.opt.epochs})
-        #wandb.log({"Device": self.device})
-        #wandb.log({"Dataset root": self.opt.datasetRoot})
-        #wandb.log({"Train ratio": self.opt.trainRatio})
+        print(f"Train dataset stats: number of images: {len(self.train_data)}")
+        print(f"Validation dataset stats: number of images: {len(self.val_data)}")
+        print(f"Test dataset stats: number of images: {len(self.test_data)}")
 
-        print(f"Train dataset stats: number of images: {len(train_data)}")
-        print(f"Test dataset stats: number of images: {len(test_data)}")
-
+    # Function to train the model
+    def train(self):
+        # Create the output directory
         if not os.path.exists('./output'):
             os.mkdir('./output')
         logfile = os.path.join('./output/log.txt')
 
-        # Load the CNN model
+        # Load the CNN model, loss_function and optimizer
         model = UNet().to(self.device)
-
-        # Initialize the loss function and iou metric
         l_bce = torch.nn.BCEWithLogitsLoss()
-        jaccard = BinaryJaccardIndex(threshold=0.5).to(self.device)
-
-        # Init softmax layer
-        sigmoid = torch.nn.Sigmoid()
-
-        # Conversion from BGR to single channel grayscale images - for masks
-        to_gray = torch.nn.Conv2d(in_channels=3, out_channels=1, kernel_size=1)
-        gray_kernel = torch.FloatTensor([[[[0.114]], [[0.587]], [[0.299]]]])
-        to_gray.weight = torch.nn.Parameter(gray_kernel, requires_grad=False)
-
-        # Initialize the optimizer
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.999))
+        optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate, betas=self.betas)
 
         # Initialize the lists to store the loss and accuracy over time
         train_loss_over_time = []
@@ -134,10 +147,9 @@ class ModelControler():
 
         # Start training
         start_time = time.time()
-        break_flag = False
 
         for epoch in range(self.opt.epochs):
-            #wandb.log({"Epoch": epoch+1})
+            wandb.log({"Epoch": epoch+1})
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
             model.train()
@@ -146,22 +158,22 @@ class ModelControler():
 
             try:
                 # Train
-                for images, masks, img_paths, mask_paths in tqdm(trainloader):
+                for images, masks, img_paths, mask_paths in tqdm(self.trainloader):
 
                     images, masks = images.to(self.device), masks.to(self.device)
                     optimizer.zero_grad() # Set all gradients to 0
 
                     predictions = model(images) # Feedforward
-                    # out = softmax(predictions)
-                    # out = sigmoid(predictions)
                     
                     loss=l_bce(predictions, masks) # Calculate the error of the current batch
                     avg_loss+=loss.cpu().detach().numpy()
                     loss.backward() # Calculate gradients with backpropagation
                     optimizer.step() # optimize weights for the next batch
+
+                    # Log the results
+                    wandb.log({"Train Loss": loss})
                 
                 avg_loss = avg_loss/len(train_data)
-                #wandb.log({"Average train loss": avg_loss})
                 print("Epoch {}: average  train loss: {:.7f}".format(epoch+1, avg_loss))
                 train_loss_over_time.append(avg_loss)
 
@@ -171,18 +183,21 @@ class ModelControler():
                 avg_val_loss = []
 
                 with torch.no_grad():
-                    # for images, masks, img_paths, mask_paths in tqdm(testloader):
-                    for images, masks, img_paths, mask_paths in testloader:
+                    for images, masks, img_paths, mask_paths in self.valloader:
                         images, masks = images.to(self.device), masks.to(self.device)
 
+                        # Feedforward, softmax
                         predictions = model(images)
-                        out = sigmoid(predictions)
-                        
-                        # Calculate IoU for training data
-                        predicted_masks_bin = torch.sigmoid(out) > 0.5
+                        predicted_masks_bin = torch.sigmoid(predictions) > 0.5
+
+                        # Calculate IoU for validation data
                         iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
 
                         avg_val_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
+
+                        # Log the results
+                        wandb.log({"Validation Loss": avg_val_loss[-1]})
+                        wandb.log({"Validation IoU": iou[-1]})
 
                 # Calculate the average IoU and loss over the validation set
                 iou = np.mean(iou) 
@@ -190,21 +205,16 @@ class ModelControler():
                 val_iou_over_time.append(iou)
                 val_loss_over_time.append(avg_val_loss)
 
-                # save network weights when the accuracy is great than the best_acc
+                # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
-                    #wandb.log({"New best found"})
-                    #wandb.log({"Current best IoU": iou})
-                    #wandb.log({"Current best val loss": avg_val_loss})
-                    #wandb.log({"Current best epoch": epoch+1})
                     print(f"New best found. Current best IoU: {iou}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './output/CNN_weights.pth')
                     best_iou = iou
 
-                #wandb;log({"Average IOU": iou, "Best IOU": best_iou, "Val loss": avg_val_loss})
                 print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou, avg_val_loss))
 
+                # Log the results
                 with open(logfile, 'a') as file:
-                    # Convert data to a string and write it to the file
                     row = f'Epoch {epoch}: Train loss: {avg_loss}, val loss: {avg_val_loss}, val iou: {iou}' '\n'
                     file.write(row)
 
@@ -226,7 +236,7 @@ class ModelControler():
         plt.ylabel("loss", fontsize=18)
         plt.legend(['Training loss', 'Validation loss'], fontsize=18)
         filename = f'loss.svg'
-        plt.savefig(os.path.join('output', filename))
+        plt.savefig(os.path.join('./output', filename))
         
         # Plot equal error rate over time
         plt.figure(figsize=(15, 10))
@@ -236,20 +246,53 @@ class ModelControler():
         # plt.ylabel("EER, AUC", fontsize=18)
         plt.legend(['IoU'], fontsize=18)
         filename = f'iou.svg'
-        plt.savefig( os.path.join('output', filename))
+        plt.savefig( os.path.join('./output', filename))
 
-        plt.show()
+    # Function to test the model
+    def test(self):
+        # Load the CNN model, loss_function and weights
+        model = UNet().to(self.device)
+        l_bce = nn.BCEWithLogitsLoss()
+        model.load_state_dict(torch.load('./output/CNN_weights.pth')['state_dict'])
+        model.eval()
 
-    # Function to calculate the intersection over union of the model
-    def calculate_iou(predictions, masks):
-        # Calculate the intersection over union
-        pred = torch.squeeze(predictions)
-        gt = torch.squeeze(masks)
-        # Convert to binary
-        intersection = torch.logical_and(pred, gt)
-        union = torch.logical_or(pred, gt)
-        iou = torch.sum(intersection) / torch.sum(union)
-        return iou.mean()
+        # Initialize the lists to store the loss and accuracy over time
+        iou = []
+        avg_test_loss = []
+
+        # Start testing
+        start_time = time.time()
+
+        with torch.no_grad():
+            for images, masks, _, _ in tqdm(self.testloader):
+                images, masks = images.to(self.device), masks.to(self.device)
+
+                # Feedforward, softmax
+                predictions = model(images)
+
+                predicted_masks_bin = torch.sigmoid(images) > 0.5
+                iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
+
+                avg_test_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
+
+                # Log the results
+                wandb.log({"Test Loss": avg_test_loss[-1]})
+                wandb.log({"Test IoU": iou[-1]})
+
+        # Print total testing time
+        end_time = time.time()
+        elapsed_time = datetime.timedelta(seconds=(end_time - start_time))
+        print(f"Total testing time: {elapsed_time}")
+
+        # Calculate the average IoU and loss over the test set
+        iou = np.mean(iou)
+        avg_test_loss = np.mean(avg_test_loss)
+
+        print("Average Test IOU: {:.7f}, Test loss: {:.7f}".format(iou, avg_test_loss))
+
+
+
+
 
 # MAIN
 if __name__ == "__main__":
@@ -279,7 +322,7 @@ if __name__ == "__main__":
     # Prepare the dataset
     if opt.prepare:
         print("Preparing the dataset...")
-        model_controler.prepare_dataset()
+        model_controler.prepare_dataset_folder()
 
     # Train the model
     if opt.train:
