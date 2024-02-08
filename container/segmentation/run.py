@@ -47,22 +47,6 @@ class ModelControler():
         self.betas = (0.9, 0.999)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Wandb initialization
-        wandb.init(project="U-Net-Water-Land-Segmentation", config={ # Model configuration
-                                                                    "hidden_layer_sizes": [64, 128, 256, 512, 1024],
-                                                                    "kernel_sizes": [3, 3, 3, 3, 3],
-                                                                    "activation": "ReLU",
-                                                                    "pool_sizes": [2, 2, 2, 2, 2],
-                                                                    "dropout": 0.5,
-                                                                    # Binary classification: water or land
-                                                                    "num_classes": 1,
-                                                                    # Training configuration
-                                                                    "learning_rate": self.learning_rate,
-                                                                    "betas": self.betas,
-                                                                    "epochs": self.opt.epochs,
-                                                                    "batch_size": self.opt.batchsize,
-                                                                })
-
         # Define the transformations
         self.define_transformations()
 
@@ -77,6 +61,23 @@ class ModelControler():
         union = torch.logical_or(pred, gt)
         iou = torch.sum(intersection) / torch.sum(union)
         return iou.mean()
+
+    # Function to initialize a new run
+    def initialize_new_run(self, name):
+        wandb.init(project="U-Net-Water-Land-Segmentation", name=name, config={ # Model configuration
+                                                                                "hidden_layer_sizes": [64, 128, 256, 512, 1024],
+                                                                                "kernel_sizes": [3, 3, 3, 3, 3],
+                                                                                "activation": "ReLU",
+                                                                                "pool_sizes": [2, 2, 2, 2, 2],
+                                                                                "dropout": 0.5,
+                                                                                # Binary classification: water or land
+                                                                                "num_classes": 1,
+                                                                                # Training configuration
+                                                                                "learning_rate": self.learning_rate,
+                                                                                "betas": self.betas,
+                                                                                "epochs": self.opt.epochs,
+                                                                                "batch_size": self.opt.batchsize,
+                                                                            })
 
     #######################################################################################################################
     # Function to prepare the dataset folder
@@ -129,9 +130,9 @@ class ModelControler():
         valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
 
         # Create the output directory
-        if not os.path.exists('./output'):
-            os.mkdir('./output')
-        logfile = os.path.join('./output/log.txt')
+        if not os.path.exists('./segmentation/output'):
+            os.mkdir('./segmentation/output')
+        logfile = os.path.join('./segmentation/output/log.txt')
 
         # Load the CNN model, loss_function and optimizer
         model = UNet().to(self.device)
@@ -143,13 +144,16 @@ class ModelControler():
         val_loss_over_time = []
         val_iou_over_time = []
 
-        # Initialize the best accuracy
-        best_iou=0
+        # Initialize the best IoU list
+        best_iou_over_time = []
 
         # Start training
         start_time = time.time()
 
         for epoch in range(self.opt.epochs):
+            # Initialize a new run
+            self.initialize_new_run(f"train-run-{epoch+1}")
+
             wandb.log({"epoch": epoch+1})
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
@@ -175,9 +179,20 @@ class ModelControler():
                     wandb.log({"train/loss": loss})
                 
                 avg_loss = avg_loss/len(train_data)
-                wandb.log({"train/avg_loss": avg_loss})
                 print("Epoch {}: average  train loss: {:.7f}".format(epoch+1, avg_loss))
                 train_loss_over_time.append(avg_loss)
+
+                # Wandb draw loss over time
+                data = [{"Epoch": x, "Train Loss": y} for x, y in enumerate(train_loss_over_time)]
+                table = wandb.Table(data=data, columns=["Epoch", "Train Loss"])
+                wandb.log(
+                    {
+                        "train_loss": wandb.plot.line(
+                            table, "Epoch", "Train Loss", title="Train Loss over time"
+                        )
+                    }
+                )
+
 
                 # Validation
                 model.eval()
@@ -209,12 +224,26 @@ class ModelControler():
                 # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
                     print(f"New best found. Current best IoU: {iou}")
-                    wandb.log({"train_val/best_iou": iou})
-                    torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './output/CNN_weights.pth')
-                    best_iou = iou
+                    torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './segmentation/output/UNet_weights.pth')
+                    best_iou_over_time.append(iou)
 
-                wandb.log({"val/avg_loss": avg_val_loss, "val/avg_iou": iou})
-                print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou, avg_val_loss))
+                    # Wandb draw best IoU over time
+                    data = [{"Epoch": x, "Best IoU": y} for x, y in enumerate(best_iou_over_time)]
+                    table = wandb.Table(data=data, columns=["Epoch", "Best IoU"])
+                    wandb.log({ "best_iou": wandb.plot.line( table, "Epoch", "Best IoU", title="Best IoU over time" ) })
+
+                # Print the results
+                print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou_over_time[-1], avg_val_loss))
+
+                # Wandb draw loss over time
+                data = [{"Epoch": x, "Val Loss": y} for x, y in enumerate(val_loss_over_time)]
+                table = wandb.Table(data=data, columns=["Epoch", "Val Loss"])
+                wandb.log({ "val_loss": wandb.plot.line( table, "Epoch", "Val Loss", title="Val Loss over time" ) })
+
+                # Wandb draw IoU over time
+                data = [{"Epoch": x, "Val IoU": y} for x, y in enumerate(val_iou_over_time)]
+                table = wandb.Table(data=data, columns=["Epoch", "Val IoU"])
+                wandb.log({ "val_iou": wandb.plot.line( table, "Epoch", "Val IoU", title="Val IoU over time" ) })
 
                 # Log the results
                 with open(logfile, 'a') as file:
@@ -223,6 +252,10 @@ class ModelControler():
 
             except KeyboardInterrupt:
                 break
+
+            finally:
+                # Finish the run
+                wandb.finish()
 
         print('\n----------------------------------------------------------------')
         # Print total training time
@@ -239,7 +272,7 @@ class ModelControler():
         plt.ylabel("loss", fontsize=18)
         plt.legend(['Training loss', 'Validation loss'], fontsize=18)
         filename = f'loss.svg'
-        plt.savefig(os.path.join('./output', filename))
+        plt.savefig(os.path.join('./segmentation/output', filename))
         
         # Plot equal error rate over time
         plt.figure(figsize=(15, 10))
@@ -249,7 +282,7 @@ class ModelControler():
         # plt.ylabel("EER, AUC", fontsize=18)
         plt.legend(['IoU'], fontsize=18)
         filename = f'iou.svg'
-        plt.savefig( os.path.join('./output', filename))
+        plt.savefig( os.path.join('./segmentation/output', filename))
 
     # Function to test the model
     def test(self):
@@ -265,7 +298,7 @@ class ModelControler():
         # Load the CNN model, loss_function and weights
         model = UNet().to(self.device)
         l_bce = nn.BCEWithLogitsLoss()
-        model.load_state_dict(torch.load('./output/CNN_weights.pth')['state_dict'])
+        model.load_state_dict(torch.load('./segmentation/output/UNet_weights.pth')['state_dict'])
         model.eval()
 
         # Initialize the lists to store the loss, accuracy and predictions
@@ -276,6 +309,9 @@ class ModelControler():
 
         # Start testing
         start_time = time.time()
+
+        # Initialize a new run
+        self.initialize_new_run("test-run")
 
         with torch.no_grad():
             for images, masks, _, _ in self.testloader:
@@ -296,6 +332,9 @@ class ModelControler():
 
                 # Log the results
                 wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1]})
+
+        # Finish the run
+        wandb.finish()
 
         # Print total testing time
         end_time = time.time()
@@ -322,7 +361,7 @@ class ModelControler():
         plt.title('Receiver Operating Characteristic', fontsize=18)
         plt.legend(loc="lower right", fontsize=18)
         filename = f'roc.svg'
-        plt.savefig(os.path.join('./output', filename))
+        plt.savefig(os.path.join('./segmentation/output', filename))
 
 
 

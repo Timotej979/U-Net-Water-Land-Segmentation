@@ -1,0 +1,1 @@
+Epoch 0: Train loss: 0.23863889334796723, val loss: 0.626349448687174, val iou: 0.0
