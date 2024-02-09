@@ -32,15 +32,15 @@ class PrepareDataset():
 
     def split_dataset(self):
         # Create train and test folders in the root directory
-        os.makedirs(os.path.join(self.root, 'train'), exist_ok=True)
-        os.makedirs(os.path.join(self.root, 'val'), exist_ok=True)
-        os.makedirs(os.path.join(self.root, 'test'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'train-seg'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'val-seg'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'test-seg'), exist_ok=True)
 
         # Create the images and masks folders in the train and test directories
         for folders in ['images', 'masks']:
-            os.makedirs(os.path.join(self.root, 'train', folders), exist_ok=True)
-            os.makedirs(os.path.join(self.root, 'val', folders), exist_ok=True)
-            os.makedirs(os.path.join(self.root, 'test', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'train-seg', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'val-seg', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'test-seg', folders), exist_ok=True)
 
         # Calculate the number of train and test images
         num_train_val = int(len(os.listdir(os.path.join(self.root, 'RGB'))) * self.train_test_ratio)
@@ -59,16 +59,16 @@ class PrepareDataset():
 
         # Copy the images and masks to the train and test directories
         for file in self.train:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train', 'images'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'train', 'masks'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train-seg', 'images'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'train-seg', 'masks'))
 
         for file in self.val:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'val', 'images'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'val', 'masks'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'val-seg', 'images'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'val-seg', 'masks'))
 
         for file in self.test:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test', 'images'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'test', 'masks'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test-seg', 'images'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'test-seg', 'masks'))
 
         # Print size of train, val and test datasets
         print(f"Train images: {len(self.train)}")
@@ -77,8 +77,8 @@ class PrepareDataset():
 
     def threshold_masks(self):
         # Threshold images in the masks folder using the color and error threshold
-        for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
-            mask_path = os.path.join(self.root, 'train', 'masks', file)
+        for file in os.listdir(os.path.join(self.root, 'train-seg', 'masks')):
+            mask_path = os.path.join(self.root, 'train-seg', 'masks', file)
             mask = Image.open(mask_path).convert("RGB")
             mask_array = np.array(mask)
             mask_diff = np.abs(mask_array - self.threshold_color)
@@ -87,8 +87,8 @@ class PrepareDataset():
             mask_image = Image.fromarray(mask, mode="L") 
             mask_image.save(mask_path)
 
-        for file in os.listdir(os.path.join(self.root, 'val', 'masks')):
-            mask_path = os.path.join(self.root, 'val', 'masks', file)
+        for file in os.listdir(os.path.join(self.root, 'val-seg', 'masks')):
+            mask_path = os.path.join(self.root, 'val-seg', 'masks', file)
             mask = Image.open(mask_path).convert("RGB")
             mask_array = np.array(mask)
             mask_diff = np.abs(mask_array - self.threshold_color)
@@ -97,8 +97,8 @@ class PrepareDataset():
             mask_image = Image.fromarray(mask, mode="L")
             mask_image.save(mask_path)
 
-        for file in os.listdir(os.path.join(self.root, 'test', 'masks')):
-            mask_path = os.path.join(self.root, 'test', 'masks', file)
+        for file in os.listdir(os.path.join(self.root, 'test-seg', 'masks')):
+            mask_path = os.path.join(self.root, 'test-seg', 'masks', file)
             mask = Image.open(mask_path).convert("RGB")
             mask_array = np.array(mask)
             mask_diff = np.abs(mask_array - self.threshold_color)
@@ -110,70 +110,70 @@ class PrepareDataset():
     def resize_images_and_masks(self, size, preserve_aspect_ratio):
         if preserve_aspect_ratio:
             # Resize images in the images folder to the specified size while preserving aspect ratio
-            for file in os.listdir(os.path.join(self.root, 'train', 'images')):
-                image_path = os.path.join(self.root, 'train', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'train-seg', 'images')):
+                image_path = os.path.join(self.root, 'train-seg', 'images', file)
                 image = Image.open(image_path)
                 image.thumbnail(size)
                 image.save(image_path)
 
-            for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
-                mask_path = os.path.join(self.root, 'train', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'train-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'train-seg', 'masks', file)
                 mask = Image.open(mask_path)
                 mask.thumbnail(size)
                 mask.save(mask_path)
 
-            for file in os.listdir(os.path.join(self.root, 'val', 'images')):
-                image_path = os.path.join(self.root, 'val', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'val-seg', 'images')):
+                image_path = os.path.join(self.root, 'val-seg', 'images', file)
                 image = Image.open(image_path)
                 image.thumbnail(size)
                 image.save(image_path)
             
-            for file in os.listdir(os.path.join(self.root, 'val', 'masks')):
-                mask_path = os.path.join(self.root, 'val', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'val-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'val-seg', 'masks', file)
                 mask = Image.open(mask_path)
                 mask.thumbnail(size)
                 mask.save(mask_path)
 
-            for file in os.listdir(os.path.join(self.root, 'test', 'images')):
-                image_path = os.path.join(self.root, 'test', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'test-seg', 'images')):
+                image_path = os.path.join(self.root, 'test-seg', 'images', file)
                 image = Image.open(image_path)
                 image.thumbnail(size)
                 image.save(image_path)
             
-            for file in os.listdir(os.path.join(self.root, 'test', 'masks')):
-                mask_path = os.path.join(self.root, 'test', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'test-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'test-seg', 'masks', file)
                 mask = Image.open(mask_path)
                 mask.thumbnail(size)
                 mask.save(mask_path)
 
         else:
             # Resize images in the images folder to the specified size
-            for file in os.listdir(os.path.join(self.root, 'train', 'images')):
-                image_path = os.path.join(self.root, 'train', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'train-seg', 'images')):
+                image_path = os.path.join(self.root, 'train-seg', 'images', file)
                 image = Image.open(image_path).resize(size)
                 image.save(image_path)
 
-            for file in os.listdir(os.path.join(self.root, 'train', 'masks')):
-                mask_path = os.path.join(self.root, 'train', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'train-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'train-seg', 'masks', file)
                 mask = Image.open(mask_path).resize(size)
                 mask.save(mask_path)
 
-            for file in os.listdir(os.path.join(self.root, 'val', 'images')):
-                image_path = os.path.join(self.root, 'val', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'val-seg', 'images')):
+                image_path = os.path.join(self.root, 'val-seg', 'images', file)
                 image = Image.open(image_path).resize(size)
                 image.save(image_path)
 
-            for file in os.listdir(os.path.join(self.root, 'val', 'masks')):
-                mask_path = os.path.join(self.root, 'val', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'val-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'val-seg', 'masks', file)
                 mask = Image.open(mask_path).resize(size)
                 mask.save(mask_path)
 
-            for file in os.listdir(os.path.join(self.root, 'test', 'images')):
-                image_path = os.path.join(self.root, 'test', 'images', file)
+            for file in os.listdir(os.path.join(self.root, 'test-seg', 'images')):
+                image_path = os.path.join(self.root, 'test-seg', 'images', file)
                 image = Image.open(image_path).resize(size)
                 image.save(image_path)
             
-            for file in os.listdir(os.path.join(self.root, 'test', 'masks')):
-                mask_path = os.path.join(self.root, 'test', 'masks', file)
+            for file in os.listdir(os.path.join(self.root, 'test-seg', 'masks')):
+                mask_path = os.path.join(self.root, 'test-seg', 'masks', file)
                 mask = Image.open(mask_path).resize(size)
                 mask.save(mask_path)

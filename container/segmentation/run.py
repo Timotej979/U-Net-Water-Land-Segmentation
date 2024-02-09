@@ -12,7 +12,7 @@ from torchvision import transforms
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, classification_report
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -115,11 +115,11 @@ class ModelControler():
     # Function to train the model
     def train(self):
         # Initialize train and validation datasets
-        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train'),
+        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train-seg'),
                                    image_only_transform=self.image_only_transform_train,
                                    transform=self.image_and_mask_transform_train)
 
-        val_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'val'),
+        val_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'val-seg'),
                                  image_only_transform=self.image_only_transform_test,
                                  transform=self.image_and_mask_transform_test)
 
@@ -152,13 +152,13 @@ class ModelControler():
 
         for epoch in range(self.opt.epochs):
             # Initialize a new run
-            self.initialize_new_run(f"train-run-{epoch+1}")
-
-            wandb.log({"epoch": epoch+1})
+            self.initialize_new_run(f"train-val-run-{epoch+1}")
+            
+            # Print the current epoch
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
 
+            # Train
             model.train()
-
             avg_loss = 0
 
             try:
@@ -287,7 +287,7 @@ class ModelControler():
     # Function to test the model
     def test(self):
         # Initialize the test dataset
-        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test'),
+        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test-seg'),
                                     image_only_transform=self.image_only_transform_test,
                                     transform=self.image_and_mask_transform_test)
 
@@ -362,6 +362,13 @@ class ModelControler():
         plt.legend(loc="lower right", fontsize=18)
         filename = f'roc.svg'
         plt.savefig(os.path.join('./segmentation/output', filename))
+
+        # Plot ROC to wandb
+        wandb.log({"roc": wandb.plot.roc_curve(all_labels, all_predictions, labels=["Segmented pixels"], title="ROC for water/land segmentation")})
+
+        # Print the classification report
+        print("Classification report:")
+        print(classification_report(all_labels, all_predictions))
 
 
 
