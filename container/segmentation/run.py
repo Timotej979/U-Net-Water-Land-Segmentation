@@ -400,17 +400,17 @@ if __name__ == "__main__":
 
     # Prepare the dataset
     if opt.prepare:
-        print("Preparing the dataset...")
+        print("Preparing the segmentation dataset...")
         model_controler.prepare_dataset_folder()
 
     # Train the model
     if opt.train:
-        print("Training the model...")
+        print("Training the segmentation model...")
         model_controler.train()
     
     # Test the model
     if opt.test:
-        print("Testing the model...")
+        print("Testing the segmentation model...")
         model_controler.test()
 
     

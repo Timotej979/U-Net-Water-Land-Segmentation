@@ -57,7 +57,7 @@ class PrepareDataset():
             else:
                 self.test.append(file)
 
-        # Copy the images and masks to the train and test directories
+        # Copy the images and masks to the train, val and test directories
         for file in self.train:
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train-seg', 'images'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'train-seg', 'masks'))
@@ -76,7 +76,7 @@ class PrepareDataset():
         print(f"Test images: {len(self.test)}")
 
     def threshold_masks(self):
-        # Threshold images in the masks folder using the color and error threshold
+        # Threshold the masks folder using the color and error threshold and convert to grayscale
         for file in os.listdir(os.path.join(self.root, 'train-seg', 'masks')):
             mask_path = os.path.join(self.root, 'train-seg', 'masks', file)
             mask = Image.open(mask_path).convert("RGB")
