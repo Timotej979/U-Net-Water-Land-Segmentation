@@ -1,6 +1,6 @@
 import argparse
 
-
+from ultralytics import YOLO
 
 from prepare_dataset import PrepareDataset
 from autolabel import AutoLabeling
@@ -49,8 +49,17 @@ class ModelControler():
             print("Invalid autolabeling method")
             exit(1)
 
-    def train(self):
-        pass
+    def train_contour(self):
+        # Load the YOLOv8 model
+        model = YOLO('yolov8n.pt')
+
+        # Use the pretrained model
+        model = model.pretrained('yolov8n.pt')
+
+        
+
+        # Train the model
+        model.train(data='/app/container/dataset/train-det', epochs=self.opt.epochs, batch_size=self.opt.batchsize, imgsz=self.opt.imagesize)
 
 
 

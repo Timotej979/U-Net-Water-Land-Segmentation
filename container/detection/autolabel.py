@@ -126,25 +126,27 @@ class AutoLabeling():
             cv2.imwrite(os.path.join(self.test_path, 'gt-masks-contour', img), gt_mask)
 
     def label_gt_autodistil(self):
-        folders_to_annote = [self.train_path, self.val_path, self.test_path]
+        # Initialize the caption ontology and assign a single class to all the objects
+        ontology=CaptionOntology({
+            "boat": "obstacle",
+            "canoe": "obstacle",
+            "kayak": "obstacle",
+            "paddle": "obstacle",
+            "sailboat": "obstacle",
+            "ship": "obstacle",
+            "yacht": "obstacle",
+        })
 
+        # Initialize the base model
+        base_model = GroundedSAM(ontology=ontology)
+
+        # Label the images in the train, validation and test sets
+        folders_to_annote = [self.train_path, self.val_path, self.test_path]
         for folder in folders_to_annote:
             # Create the autodistil-annotations folders
             os.makedirs(os.path.join(folder, 'autodistil-annotations'), exist_ok=True)
             
-            # Initialize the caption ontology and assign a single class to all the objects
-            ontology=CaptionOntology({
-                "boat": "obstacle",
-                "canoe": "obstacle",
-                "kayak": "obstacle",
-                "paddle": "obstacle",
-                "sailboat": "obstacle",
-                "ship": "obstacle",
-                "yacht": "obstacle",
-            })
-
-            # Initialize the base model
-            base_model = GroundedSAM(ontology=ontology)
+            # Label the images using autodistil
             dataset = base_model.label(
                 input_folder=os.path.join(folder, 'gt-images-autodistil'),
                 extension=".jpg",

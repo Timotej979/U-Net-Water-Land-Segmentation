@@ -12,6 +12,9 @@ wandb
 albumentations
 matplotlib
 
+# YOLOv8 dependencies
+ultralytics
+
 # AutoDistill dependencies
 transformers
 autodistill
