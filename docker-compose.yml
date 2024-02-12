@@ -14,3 +14,12 @@ services:
       - WANDB_ENTITY=${WANDB_ENTITY}
       
     command: ["bash", "-c", "cd /app/container && chmod +x runSegDet.sh && ./runSegDet.sh"]
+
+    # Comment/uncomment for GPU usage in container
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          count: 1
+    #          capabilities: [gpu]
