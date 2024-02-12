@@ -56,12 +56,26 @@ class ModelControler():
         # Use the pretrained model
         model = model.pretrained('yolov8n.pt')
 
-        
+        #TODO
 
         # Train the model
         model.train(data='/app/container/dataset/train-det', epochs=self.opt.epochs, batch_size=self.opt.batchsize, imgsz=self.opt.imagesize)
 
+    def test_contour(self):
+        # TODO
+        pass
 
+    def train_autodistil(self):
+        #TODO
+        pass
+
+    def test_autodistil(self):
+        #TODO
+        pass
+
+    def test_pretrained(self):
+        #TODO
+        pass
 
 
 
@@ -79,7 +93,9 @@ if __name__ == "__main__":
     options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: contours/autodistil')
     # Model control
     options.add_argument('--train', action='store_true', help='Train the model')
+    options.add_argument('--train-method', type=str, default='contours', help='Method to use for training the YOLOv8 model can be either: contours/autodistil')
     options.add_argument('--test', action='store_true', help="Test the model")
+    options.add_argument('--test-method', type=str, default='pretrained', help='Method to use for testing the YOLOv8 model can be either: pretrained/contours/autodistil')
     # Configuration
     options.add_argument('--datasetRoot', type=str, default='/app/container/dataset', help='Root directory of the dataset')
     options.add_argument('--trainTestRatio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
@@ -101,3 +117,20 @@ if __name__ == "__main__":
     if opt.autolabel:
         print("Autolabeling the detection dataset...")
         model_controler.autolabel_dataset()
+
+    # Train the model and generate the weights
+    if opt.train_method == 'contours':
+        model_controler.train_contour()
+
+    if opt.train_method == 'autodistil':
+        model_controler.train_autodistil()
+
+    # Test the model and evaluate it
+    if opt.test_method == 'pretrained':
+        model_controler.test_pretrained()
+
+    if opt.test_method == 'contours':
+        model_controler.test_contour()
+
+    if opt.test_method == 'autodistil':
+        model_controler.test_autodistil()
