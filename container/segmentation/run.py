@@ -52,15 +52,20 @@ class ModelControler():
 
     # Function to calculate the intersection over union of the model
     @staticmethod
-    def calculate_iou(predictions, masks):
-        # Calculate the intersection over union
+    def calculate_iou_f1(predictions, masks):
+        # Calculate the intersection over union (IoU)
         pred = torch.squeeze(predictions)
         gt = torch.squeeze(masks)
+        
         # Convert to binary
         intersection = torch.logical_and(pred, gt)
         union = torch.logical_or(pred, gt)
         iou = torch.sum(intersection) / torch.sum(union)
-        return iou.mean()
+        
+        # Calculate Dice score (F1 score)
+        dice_score = 2 * torch.sum(intersection) / (torch.sum(pred) + torch.sum(gt))
+        
+        return iou.mean(), dice_score.mean()
 
     # Function to initialize a new run
     def initialize_new_run(self, name):
@@ -146,6 +151,7 @@ class ModelControler():
 
         # Initialize the best IoU list
         best_iou_over_time = []
+        best_f1_over_time = []
 
         # Start training
         start_time = time.time()
@@ -187,7 +193,7 @@ class ModelControler():
                 table = wandb.Table(data=data, columns=["Epoch", "Train Loss"])
                 wandb.log(
                     {
-                        "train_loss": wandb.plot.line(
+                        "train/loss_ot": wandb.plot.line(
                             table, "Epoch", "Train Loss", title="Train Loss over time"
                         )
                     }
@@ -197,6 +203,7 @@ class ModelControler():
                 # Validation
                 model.eval()
                 iou = []
+                f1 = []
                 avg_val_loss = []
 
                 with torch.no_grad():
@@ -208,42 +215,57 @@ class ModelControler():
                         predicted_masks_bin = torch.sigmoid(predictions) > 0.5
 
                         # Calculate IoU for validation data
-                        iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
+                        iou, f1_score = self.calculate_iou_f1(predicted_masks_bin, masks).cpu().numpy()
+                        iou.append(iou)
+                        f1.append(f1_score)
 
                         avg_val_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
                         # Log the results
-                        wandb.log({"val/loss": avg_val_loss[-1], "val/iou": iou[-1]})
+                        wandb.log({"val/loss": avg_val_loss[-1], "val/iou": iou[-1], "val/f1": f1[-1]})
 
                 # Calculate the average IoU and loss over the validation set
                 iou = np.mean(iou) 
+                f1 = np.mean(f1)
                 avg_val_loss = np.mean(avg_val_loss)
-                val_iou_over_time.append(iou)
                 val_loss_over_time.append(avg_val_loss)
+                val_iou_over_time.append(iou)
+                val_f1_over_time.append(f1)
 
                 # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
                     print(f"New best found. Current best IoU: {iou}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './segmentation/output/UNet_weights.pth')
                     best_iou_over_time.append(iou)
+                    best_f1_over_time.append(f1)
 
                     # Wandb draw best IoU over time
                     data = [{"Epoch": x, "Best IoU": y} for x, y in enumerate(best_iou_over_time)]
                     table = wandb.Table(data=data, columns=["Epoch", "Best IoU"])
-                    wandb.log({ "best_iou": wandb.plot.line( table, "Epoch", "Best IoU", title="Best IoU over time" ) })
+                    wandb.log({ "val/best_iou": wandb.plot.line( table, "Epoch", "Best IoU", title="Best IoU over time" ) })
+
+                    # Wandb draw best F1 over time
+                    data = [{"Epoch": x, "Best F1": y} for x, y in enumerate(best_f1_over_time)]
+                    table = wandb.Table(data=data, columns=["Epoch", "Best F1"])
+                    wandb.log({ "val/best_f1": wandb.plot.line( table, "Epoch", "Best F1", title="Best F1 over time" ) })
 
                 # Print the results
-                print("Average IOU: {:.7f}     Best IOU: {:.7f}, val loss: {:.7f}".format(iou, best_iou_over_time[-1], avg_val_loss))
+                print("Average IOU: {:.7f}     Best IOU: {:.7f}     Average F1: {:.7f}     Best F1: {:.7f}     Average Val Loss: {:.7f}".format(iou, best_iou, f1, best_f1, avg_val_loss))
 
                 # Wandb draw loss over time
                 data = [{"Epoch": x, "Val Loss": y} for x, y in enumerate(val_loss_over_time)]
                 table = wandb.Table(data=data, columns=["Epoch", "Val Loss"])
-                wandb.log({ "val_loss": wandb.plot.line( table, "Epoch", "Val Loss", title="Val Loss over time" ) })
+                wandb.log({ "val/loss_ot": wandb.plot.line( table, "Epoch", "Val Loss", title="Val Loss over time" ) })
 
                 # Wandb draw IoU over time
                 data = [{"Epoch": x, "Val IoU": y} for x, y in enumerate(val_iou_over_time)]
                 table = wandb.Table(data=data, columns=["Epoch", "Val IoU"])
-                wandb.log({ "val_iou": wandb.plot.line( table, "Epoch", "Val IoU", title="Val IoU over time" ) })
+                wandb.log({ "val/iou_ot": wandb.plot.line( table, "Epoch", "Val IoU", title="Val IoU over time" ) })
+
+                # Wandb draw F1 over time
+                data = [{"Epoch": x, "Val F1": y} for x, y in enumerate(val_f1_over_time)]
+                table = wandb.Table(data=data, columns=["Epoch", "Val F1"])
+                wandb.log({ "val/f1_ot": wandb.plot.line( table, "Epoch", "Val F1", title="Val F1 over time" ) })
 
                 # Log the results
                 with open(logfile, 'a') as file:
@@ -303,9 +325,8 @@ class ModelControler():
 
         # Initialize the lists to store the loss, accuracy and predictions
         iou = []
+        f1 = []
         avg_test_loss = []
-        all_labels = []
-        all_predictions = []
 
         # Start testing
         start_time = time.time()
@@ -321,20 +342,28 @@ class ModelControler():
                 predictions = model(images)
 
                 predicted_masks_bin = torch.sigmoid(images) > 0.5
-                
-                # Flatten the masks and predictions
-                all_labels.extend(masks.cpu().numpy().flatten())
-                all_predictions.extend(predicted_masks_bin.cpu().numpy().flatten())
 
                 # Calculate IoU and loss for test data
-                iou.append(self.calculate_iou(predicted_masks_bin, masks).cpu().numpy())
+                iou, f1_score = self.calculate_iou_f1(predicted_masks_bin, masks).cpu().numpy()
+                iou.append(iou)
+                f1.append(f1_score)
                 avg_test_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
                 # Log the results
-                wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1]})
+                wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1], "test/f1": f1[-1]})
 
         # Finish the run
         wandb.finish()
+
+        # Draw iou over time
+        data = [{"Epoch": x, "Test IoU": y} for x, y in enumerate(iou)]
+        table = wandb.Table(data=data, columns=["Epoch", "Test IoU"])
+        wandb.log({ "test/iou_ot": wandb.plot.line( table, "Epoch", "Test IoU", title="Test IoU over time" ) })
+
+        # Draw f1 over time
+        data = [{"Epoch": x, "Test F1": y} for x, y in enumerate(f1)]
+        table = wandb.Table(data=data, columns=["Epoch", "Test F1"])
+        wandb.log({ "test/f1_ot": wandb.plot.line( table, "Epoch", "Test F1", title="Test F1 over time" ) })
 
         # Print total testing time
         end_time = time.time()
@@ -343,6 +372,7 @@ class ModelControler():
 
         # Calculate the average IoU and loss over the test set
         iou = np.mean(iou)
+        f1 = np.mean(f1)
         avg_test_loss = np.mean(avg_test_loss)
 
         print("Average Test IOU: {:.7f}, Test loss: {:.7f}".format(iou, avg_test_loss))
