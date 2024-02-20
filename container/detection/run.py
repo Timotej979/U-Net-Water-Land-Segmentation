@@ -28,38 +28,29 @@ class ModelControler():
 
     # Function to prepare the dataset folder
     def prepare_dataset_folder(self):
-        # Split the dataset into train and test directories
+        # Split the dataset into 3 subdatasets
         self.dataset_preparation_class.split_dataset()
-        # Threshold the masks
-        self.dataset_preparation_class.threshold_masks()
-        self.dataset_preparation_class.threshold_gt_masks()
-        # Resize the images and masks
-        if self.opt.resize_prepaired:
-            self.dataset_preparation_class.resize_images_and_masks(self.opt.resize_prepaired_size, self.opt.resize_prepaired_preserve_aspect_ratio)
+        # Threshold the contour images
+        self.dataset_preparation_class.threshold_contour_images()
+        # Resize the images in dataset
+        if self.opt.resize_prepared:
+            self.dataset_preparation_class.resize_images(self.opt.resize_prepared_size, self.opt.resize_prepared_preserve_aspect_ratio)
 
     def autolabel_dataset(self):
         # Intialize the annotation folders
-        self.autolabel_class.initialize_annotation_folders()
+        self.autolabel_class.initialize_label_folders()
         # Label the ground truth using contour or autodistil detection
         if self.opt.autolabel_method == 'contours':
-            self.autolabel_class.label_gt_contours()
+            self.autolabel_class.label_contours()
         elif self.opt.autolabel_method == 'autodistil':
-            self.autolabel_class.label_gt_autodistil()
+            self.autolabel_class.label_autodistil()
         else:
             print("Invalid autolabeling method")
             exit(1)
 
     def train_contour(self):
-        # Load the YOLOv8 model
-        model = YOLO('yolov8n.pt')
-
-        # Use the pretrained model
-        model = model.pretrained('yolov8n.pt')
-
         #TODO
-
-        # Train the model
-        model.train(data='/app/container/dataset/train-det', epochs=self.opt.epochs, batch_size=self.opt.batchsize, imgsz=self.opt.imagesize)
+        pass
 
     def test_contour(self):
         # TODO
@@ -85,9 +76,9 @@ if __name__ == "__main__":
 
     # Dataset control
     options.add_argument('--prepare', action='store_true', help='Prepare the dataset')
-    options.add_argument('--resize-prepaired', action='store_true', help='Resize the images and masks')
-    options.add_argument('--resize-prepaired-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio')
-    options.add_argument('--resize-prepaired-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--resize-prepared', action='store_true', help='Resize the images and masks')
+    options.add_argument('--resize-prepared-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio')
+    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
     # Autolabeling control
     options.add_argument('--autolabel', action='store_true', help='Autolabel the dataset')
     options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: contours/autodistil')

@@ -32,16 +32,18 @@ class PrepareDataset():
         self.threshold_color = np.array([41, 167, 224], dtype=np.uint8)
 
     def split_dataset(self):
-        # Create train and test folders in the root directory
-        os.makedirs(os.path.join(self.root, 'train-det'), exist_ok=True)
-        os.makedirs(os.path.join(self.root, 'val-det'), exist_ok=True)
-        os.makedirs(os.path.join(self.root, 'test-det'), exist_ok=True)
+        # Create 3 custom YOLOv8 datasets for raw, contour and autodistil detection
+        os.makedirs(os.path.join(self.root, 'raw-det'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'contour-det'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'autodistil-det'), exist_ok=True)
 
-        # Create the images and masks folders in the train and test directories
-        for folders in ['images', 'gt-images-contour', 'gt-images-autodistil', 'masks', 'gt-masks-contour']:
-            os.makedirs(os.path.join(self.root, 'train-det', folders), exist_ok=True)
-            os.makedirs(os.path.join(self.root, 'val-det', folders), exist_ok=True)
-            os.makedirs(os.path.join(self.root, 'test-det', folders), exist_ok=True)
+        # Create train val and test directories in the raw, contour and autodistil directories with the images and labels folders
+        for folders in ['train', 'val', 'test']:
+            os.makedirs(os.path.join(self.root, 'raw-det', 'images', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'contour-det', 'gt-rgb', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'contour-det', 'gt-gray', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'contour-det', 'images', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'autodistil-det', 'images', folders), exist_ok=True)
 
         # Calculate the number of train and test images
         num_train_val = int(len(os.listdir(os.path.join(self.root, 'RGB'))) * self.train_test_ratio)
@@ -58,37 +60,57 @@ class PrepareDataset():
             else:
                 self.test.append(file)
 
-        # Copy the images and masks to the train, val and test directories
+        # Copy the images and masks to the train, val and test directories respectively
         for file in self.train:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train-det', 'images'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train-det', 'gt-images-contour'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'train-det', 'gt-images-autodistil'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'train-det', 'masks'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'train-det', 'gt-masks-contour'))
+            # Images for raw and autodistil are RGB, while images for contour are WASR
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'train'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'train'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'train'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'train'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'images', 'train'))
 
         for file in self.val:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'val-det', 'images'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'val-det', 'gt-images-contour'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'val-det', 'gt-images-autodistil'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'val-det', 'masks'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'val-det', 'gt-masks-contour'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'val'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'val'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'val'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'val'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'images', 'val'))
 
         for file in self.test:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test-det', 'images'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test-det', 'gt-images-contour'))
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'test-det', 'gt-images-autodistil'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'test-det', 'masks'))
-            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'test-det', 'gt-masks-contour'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'test'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'test'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'test'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'test'))
+            shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'images', 'test'))
 
         # Print size of train, val and test datasets
         print(f"Train images: {len(self.train)}")
         print(f"Val images: {len(self.val)}")
         print(f"Test images: {len(self.test)}")
 
-    def threshold_masks(self):
-        # Threshold the masks folder using the color threshold and convert to grayscale
-        for file in os.listdir(os.path.join(self.root, 'train-det', 'masks')):
-            mask_path = os.path.join(self.root, 'train-det', 'masks', file)
+    def threshold_contour_images(self):
+        # Threshold the contour dataset images using the color threshold and convert to rgb
+        for file in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train')):
+            # Threshold the images
+            mask_path = os.path.join(self.root, 'contour-det', 'images', 'train', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-gray', 'train', file)
             mask = Image.open(mask_path).convert('RGB')
             mask_array = np.array(mask)
             mask_diff = np.abs(mask_array - self.threshold_color)
@@ -97,8 +119,56 @@ class PrepareDataset():
             mask_image = Image.fromarray(mask, mode="L") 
             mask_image.save(mask_path)
 
-        for file in os.listdir(os.path.join(self.root, 'val-det', 'masks')):
-            mask_path = os.path.join(self.root, 'val-det', 'masks', file)
+        for file in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val')):
+            # Threshold the images
+            mask_path = os.path.join(self.root, 'contour-det', 'images', 'val', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-gray', 'val', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask, 255, 0).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="L") 
+            mask_image.save(mask_path)
+
+        for file in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test')):
+            # Threshold the images
+            mask_path = os.path.join(self.root, 'contour-det', 'images', 'test', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', file)
+            mask = Image.open(mask_path).convert('RGB')
+            mask_array = np.array(mask)
+            mask_diff = np.abs(mask_array - self.threshold_color)
+            mask = np.all(mask_diff < self.threshold_error, axis=-1)
+            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
+            mask_image = Image.fromarray(mask, mode="RGB")
+            mask_image.save(mask_path)
+            # Threshold the ground truth images
+            mask_path = os.path.join(self.root, 'contour-det', 'gt-gray', 'test', file)
             mask = Image.open(mask_path).convert('RGB')
             mask_array = np.array(mask)
             mask_diff = np.abs(mask_array - self.threshold_color)
@@ -107,85 +177,46 @@ class PrepareDataset():
             mask_image = Image.fromarray(mask, mode="L")
             mask_image.save(mask_path)
 
-        for file in os.listdir(os.path.join(self.root, 'test-det', 'masks')):
-            mask_path = os.path.join(self.root, 'test-det', 'masks', file)
-            mask = Image.open(mask_path).convert('RGB')
-            mask_array = np.array(mask)
-            mask_diff = np.abs(mask_array - self.threshold_color)
-            mask = np.all(mask_diff < self.threshold_error, axis=-1)
-            mask = np.where(mask, 255, 0).astype(np.uint8)
-            mask_image = Image.fromarray(mask, mode="L")
-            mask_image.save(mask_path)
-
-    def threshold_gt_masks(self):
-        # Threshold the masks folder using the color threshold and convert to RGB
-        for file in os.listdir(os.path.join(self.root, 'train-det', 'gt-masks-contour')):
-            mask_path = os.path.join(self.root, 'train-det', 'gt-masks-contour', file)
-            mask = Image.open(mask_path).convert('RGB')
-            mask_array = np.array(mask)
-            mask_diff = np.abs(mask_array - self.threshold_color)
-            mask = np.all(mask_diff < self.threshold_error, axis=-1)
-            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
-            mask_image = Image.fromarray(mask, mode="RGB")
-            mask_image.save(mask_path)
-
-        for file in os.listdir(os.path.join(self.root, 'val-det', 'gt-masks-contour')):
-            mask_path = os.path.join(self.root, 'val-det', 'gt-masks-contour', file)
-            mask = Image.open(mask_path).convert('RGB')
-            mask_array = np.array(mask)
-            mask_diff = np.abs(mask_array - self.threshold_color)
-            mask = np.all(mask_diff < self.threshold_error, axis=-1)
-            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
-            mask_image = Image.fromarray(mask, mode="RGB")
-            mask_image.save(mask_path)
-
-        for file in os.listdir(os.path.join(self.root, 'test-det', 'gt-masks-contour')):
-            mask_path = os.path.join(self.root, 'test-det', 'gt-masks-contour', file)
-            mask = Image.open(mask_path).convert('RGB')
-            mask_array = np.array(mask)
-            mask_diff = np.abs(mask_array - self.threshold_color)
-            mask = np.all(mask_diff < self.threshold_error, axis=-1)
-            mask = np.where(mask[:, :, np.newaxis], [255, 255, 255], [0, 0, 0]).astype(np.uint8)
-            mask_image = Image.fromarray(mask, mode="RGB")
-            mask_image.save(mask_path)
-
-    def resize_images_and_masks(self, size, preserve_aspect_ratio):
-        # Resize all images, masks and gt to the specified size
-        folders_to_resize = ['images', 'gt-images-contour', 'gt-images-autodistil', 'masks', 'gt-masks-contour']
-        # Resize the images and masks
-        for folder in folders_to_resize:
-            if preserve_aspect_ratio:
-                # Resize images in the images folder to the specified size while preserving aspect ratio
-                for file in os.listdir(os.path.join(self.root, 'train-det', folder)):
-                    image_path = os.path.join(self.root, 'train-det', folder, file)
-                    image = Image.open(image_path)
-                    image.thumbnail(size)
-                    image.save(image_path)
-
-                for file in os.listdir(os.path.join(self.root, 'val-det', folder)):
-                    image_path = os.path.join(self.root, 'val-det', folder, file)
-                    image = Image.open(image_path)
-                    image.thumbnail(size)
-                    image.save(image_path)
-
-                for file in os.listdir(os.path.join(self.root, 'test-det', folder)):
-                    image_path = os.path.join(self.root, 'test-det', folder, file)
-                    image = Image.open(image_path)
-                    image.thumbnail(size)
-                    image.save(image_path)
+    def resize_images(self, size, preserve_aspect_ratio):
+        # Resize all images in datasets
+        for dataset in ['raw-det', 'contour-det', 'autodistil-det']:
+            if dataset == 'contour-det':
+                for folder in ['train', 'val', 'test']:
+                    # Images
+                    for file in os.listdir(os.path.join(self.root, dataset, 'images', folder)):
+                        img_path = os.path.join(self.root, dataset, 'images', folder, file)
+                        img = Image.open(img_path)
+                        if preserve_aspect_ratio:
+                            img.thumbnail(size)
+                        else:
+                            img = img.resize(size)
+                        img.save(img_path)
+                    # Ground truth
+                    for file in os.listdir(os.path.join(self.root, dataset, 'gt-rgb', folder)):
+                        img_path = os.path.join(self.root, dataset, 'gt-rgb', folder, file)
+                        img = Image.open(img_path)
+                        if preserve_aspect_ratio:
+                            img.thumbnail(size)
+                        else:
+                            img = img.resize(size)
+                        img.save(img_path)
+                    # Ground truth
+                    for file in os.listdir(os.path.join(self.root, dataset, 'gt-gray', folder)):
+                        img_path = os.path.join(self.root, dataset, 'gt-gray', folder, file)
+                        img = Image.open(img_path)
+                        if preserve_aspect_ratio:
+                            img.thumbnail(size)
+                        else:
+                            img = img.resize(size)
+                        img.save(img_path)
             else:
-                # Resize images in the images folder to the specified size
-                for file in os.listdir(os.path.join(self.root, 'train-det', folder)):
-                    image_path = os.path.join(self.root, 'train-det', folder, file)
-                    image = Image.open(image_path).resize(size)
-                    image.save(image_path)
-
-                for file in os.listdir(os.path.join(self.root, 'val-det', folder)):
-                    image_path = os.path.join(self.root, 'val-det', folder, file)
-                    image = Image.open(image_path).resize(size)
-                    image.save(image_path)
-
-                for file in os.listdir(os.path.join(self.root, 'test-det', folder)):
-                    image_path = os.path.join(self.root, 'test-det', folder, file)
-                    image = Image.open(image_path).resize(size)
-                    image.save(image_path)
+                # Images
+                for folder in ['train', 'val', 'test']:
+                    for file in os.listdir(os.path.join(self.root, dataset, 'images', folder)):
+                        img_path = os.path.join(self.root, dataset, 'images', folder, file)
+                        img = Image.open(img_path)
+                        if preserve_aspect_ratio:
+                            img.thumbnail(size)
+                        else:
+                            img = img.resize(size)
+                        img.save(img_path)

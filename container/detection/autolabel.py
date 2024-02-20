@@ -2,7 +2,6 @@ import os
 import cv2
 from autodistill.detection import CaptionOntology
 from autodistill_grounded_sam import GroundedSAM
-import supervision as sv
 
 
 class AutoLabeling():
@@ -16,29 +15,27 @@ class AutoLabeling():
         # Initialize the root of the dataset
         self.root = root
 
-        # Initialize the paths of the train test and validation sets
-        self.train_path = os.path.join(self.root, 'train-det')
-        self.val_path = os.path.join(self.root, 'val-det')
-        self.test_path = os.path.join(self.root, 'test-det')
-
         # Set max contour area normalized to the mask size
         self.max_contour_area = 0.25
         
     # Initialize the annotation folders
-    def initialize_annotation_folders(self):
-        # Create the annotations folders
-        os.makedirs(os.path.join(self.train_path, 'yolov8-contour-annotations'), exist_ok=True)
-        os.makedirs(os.path.join(self.val_path, 'yolov8-contour-annotations'), exist_ok=True)
-        os.makedirs(os.path.join(self.test_path, 'yolov8-contour-annotations'), exist_ok=True)
+    def initialize_label_folders(self):
+        # Create 2 custom YOLOv8 datasets for contour and autodistil
+        os.makedirs(os.path.join(self.root, 'contour-det', 'labels'), exist_ok=True)
+        os.makedirs(os.path.join(self.root, 'autodistil-det', 'labels'), exist_ok=True)
+
+        # Create train val and test directories in the contour and auto-distil directories with the images and labels folders
+        for folders in ['train', 'val', 'test']:
+            os.makedirs(os.path.join(self.root, 'contour-det', 'labels', folders), exist_ok=True)
+            os.makedirs(os.path.join(self.root, 'autodistil-det', 'labels', folders), exist_ok=True)
 
     # Label the ground truth using contour detection
-    def label_gt_contours(self):
+    def label_contours(self):
         # Label all images in the train set
-        for img in os.listdir(os.path.join(self.train_path, 'masks')):
-            # Read the mask, original image and gt-mask
-            mask = cv2.imread(os.path.join(self.train_path, 'masks', img), cv2.IMREAD_GRAYSCALE)
-            original = cv2.imread(os.path.join(self.train_path, 'images', img.replace('.png', '.jpg')))
-            gt_mask = cv2.imread(os.path.join(self.train_path, 'gt-masks-contour', img))
+        for img in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train')):
+            # Read the mask and original image
+            mask = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-gray', 'train', img), cv2.IMREAD_GRAYSCALE)
+            original = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', img), cv2.IMREAD_COLOR)
             # Get the mask size to limit the contours
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
@@ -51,26 +48,20 @@ class AutoLabeling():
                 area = abs(cv2.contourArea(contour))
                 if area < mask_size * self.max_contour_area:
                     x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image and the gt-mask
+                    # Draw the rectangle on the original image
                     cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    cv2.rectangle(gt_mask, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    # Write the normalized labels in YOLOv8 format to the labels folder
+                    with open(os.path.join(self.root, 'contour-det', 'labels', 'train', img.replace('.png', '.txt')), 'w') as file:
+                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-                    # Write the labels to the yolov8-annotations folder
-                    with open(os.path.join(self.train_path, 'yolov8-contour-annotations', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {x+w/2} {y+h/2} {w} {h}\n')  
-
-            # Save the original image and gt-mask
-            cv2.imwrite(os.path.join(self.train_path, 'images', img.replace('.png', '.jpg')), original)
-            cv2.imwrite(os.path.join(self.train_path, 'gt-masks-contour', img), gt_mask)
-
-              
+            # Save the original image
+            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', img), original)
 
         # Label all images in the validation set
-        for img in os.listdir(os.path.join(self.val_path, 'masks')):  
-            # Read the mask, original image and gt-mask
-            mask = cv2.imread(os.path.join(self.val_path, 'masks', img), cv2.IMREAD_GRAYSCALE)
-            original = cv2.imread(os.path.join(self.val_path, 'images', img.replace('.png', '.jpg')))
-            gt_mask = cv2.imread(os.path.join(self.val_path, 'gt-masks-contour', img))
+        for img in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val')):
+            # Read the mask and original image
+            mask = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-gray', 'val', img), cv2.IMREAD_GRAYSCALE)
+            original = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', img), cv2.IMREAD_COLOR)
             # Get the mask size to limit the contours
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
@@ -83,24 +74,20 @@ class AutoLabeling():
                 area = abs(cv2.contourArea(contour))
                 if area < mask_size * self.max_contour_area:
                     x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image and the gt-mask
+                    # Draw the rectangle on the original image
                     cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    cv2.rectangle(gt_mask, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    # Write the normalized labels in YOLOv8 format to the labels folder
+                    with open(os.path.join(self.root, 'contour-det', 'labels', 'val', img.replace('.png', '.txt')), 'w') as file:
+                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-                    # Write the labels to the yolov8-annotations folder
-                    with open(os.path.join(self.val_path, 'yolov8-contour-annotations', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {x+w/2} {y+h/2} {w} {h}\n')
-
-            # Save the original image and gt-mask
-            cv2.imwrite(os.path.join(self.val_path, 'images', img.replace('.png', '.jpg')), original)
-            cv2.imwrite(os.path.join(self.val_path, 'gt-masks-contour', img), gt_mask)  
+            # Save the original image
+            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', img), original)
 
         # Label all images in the test set
-        for img in os.listdir(os.path.join(self.test_path, 'masks')):
-            # Read the mask, original image and gt-mask
-            mask = cv2.imread(os.path.join(self.test_path, 'masks', img), cv2.IMREAD_GRAYSCALE)
-            original = cv2.imread(os.path.join(self.test_path, 'images', img.replace('.png', '.jpg')))
-            gt_mask = cv2.imread(os.path.join(self.test_path, 'gt-masks-contour', img))
+        for img in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test')):
+            # Read the mask and original image
+            mask = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-gray', 'test', img), cv2.IMREAD_GRAYSCALE)
+            original = cv2.imread(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', img), cv2.IMREAD_COLOR)
             # Get the mask size to limit the contours
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
@@ -113,19 +100,25 @@ class AutoLabeling():
                 area = abs(cv2.contourArea(contour))
                 if area < mask_size * self.max_contour_area:
                     x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image and the gt-mask
+                    # Draw the rectangle on the original image
                     cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    cv2.rectangle(gt_mask, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                    # Write the normalized labels in YOLOv8 format to the labels folder
+                    with open(os.path.join(self.root, 'contour-det', 'labels', 'test', img.replace('.png', '.txt')), 'w') as file:
+                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-                    # Write the labels to the yolov8-annotations folder
-                    with open(os.path.join(self.test_path, 'yolov8-contour-annotations', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {x+w/2} {y+h/2} {w} {h}\n')
+            # Save the original image
+            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', img), original)
 
-            # Save the original image and gt-mask
-            cv2.imwrite(os.path.join(self.test_path, 'images', img.replace('.png', '.jpg')), original)
-            cv2.imwrite(os.path.join(self.test_path, 'gt-masks-contour', img), gt_mask)
+        # Create the yaml config file for the contour dataset for YOLOv8
+        with open(os.path.join(self.root, 'contour-det', 'config.yaml'), 'w') as file:
+            file.write('train: /app/container/dataset/contour-det/images/train\n')
+            file.write('val: /app/container/dataset/contour-det/images/val\n')
+            file.write('test: /app/container/dataset/contour-det/images/test\n')
+            file.write('nc: 1\n')
+            file.write('names: [\'obstacle\']\n')
 
-    def label_gt_autodistil(self):
+    # Label the ground truth using autodistil
+    def label_autodistil(self):
         # Initialize the caption ontology and assign a single class to all the objects
         ontology=CaptionOntology({
             "boat": "obstacle",
@@ -141,16 +134,16 @@ class AutoLabeling():
         base_model = GroundedSAM(ontology=ontology)
 
         # Label the images in the train, validation and test sets
-        folders_to_annote = [self.train_path, self.val_path, self.test_path]
-        for folder in folders_to_annote:
-            # Create the autodistil-annotations folders
-            os.makedirs(os.path.join(folder, 'autodistil-annotations'), exist_ok=True)
-            
-            # Label the images using autodistil
+        folders_to_annotate = [
+            os.path.join(self.root, 'autodistil-det', 'images', 'train'),
+            os.path.join(self.root, 'autodistil-det', 'images', 'val'),
+            os.path.join(self.root, 'autodistil-det', 'images', 'test')
+        ]
+        for folder in folders_to_annotate:
             dataset = base_model.label(
-                input_folder=os.path.join(folder, 'gt-images-autodistil'),
+                input_folder=folder,
                 extension=".jpg",
-                output_folder=os.path.join(folder, 'gt-images-autodistil'),
+                output_folder=folder.replace("images", "labels"),
             )
 
 
