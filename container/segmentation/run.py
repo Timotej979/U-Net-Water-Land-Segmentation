@@ -97,8 +97,8 @@ class ModelControler():
         # Threshold the masks
         self.dataset_preparation_class.threshold_masks()
         # Resize the images and masks
-        if self.opt.resize_prepaired:
-            self.dataset_preparation_class.resize_images_and_masks(self.opt.resize_prepaired_size, self.opt.resize_prepaired_preserve_aspect_ratio)
+        if self.opt.resize_prepared:
+            self.dataset_preparation_class.resize_images_and_masks(self.opt.resize_prepared_size, self.opt.resize_prepared_preserve_aspect_ratio)
 
     # Function to define image transformations
     def define_transformations(self):
@@ -166,7 +166,7 @@ class ModelControler():
 
         for epoch in range(self.opt.epochs):
             # Initialize a new run
-            self.initialize_new_run(f"train-val-run-{epoch+1}")
+            self.initialize_new_run(f"segmentation-train-val-run-{epoch+1}")
             
             # Print the current epoch
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
@@ -376,7 +376,7 @@ class ModelControler():
         start_time = time.time()
 
         # Initialize a new run
-        self.initialize_new_run("test-run")
+        self.initialize_new_run("segmentation-test-run")
 
         with torch.no_grad():
             for images, masks, _, _ in self.testloader:
@@ -436,9 +436,9 @@ if __name__ == "__main__":
 
     # Dataset control
     options.add_argument('--prepare', action='store_true', help='Prepare the dataset.')
-    options.add_argument('--resize-prepaired', action='store_true', help='Resize the images and masks.')
-    options.add_argument('--resize-prepaired-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio.')
-    options.add_argument('--resize-prepaired-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--resize-prepared', action='store_true', help='Resize the images and masks.')
+    options.add_argument('--resize-prepared-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio.')
+    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
     # Model control
     options.add_argument('--train', action='store_true', help='Train the model.')
     options.add_argument('--best-weights', type=str, default='IoU', help='Which weights to use for testing the model: "IoU", "Dice" or "Pixel_Accuracy')
