@@ -39,9 +39,9 @@ class ModelControler():
     def autolabel_dataset(self):
         # Intialize the annotation folders
         self.autolabel_class.initialize_label_folders()
-        # Label the ground truth using contour or autodistil detection
-        if self.opt.autolabel_method == 'contours':
-            self.autolabel_class.label_contours()
+        # Label the ground truth using rawcontours or autodistil
+        if self.opt.autolabel_method == 'rawcontours':
+            self.autolabel_class.label_raw_and_contours()
         elif self.opt.autolabel_method == 'autodistil':
             self.autolabel_class.label_autodistil()
         else:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
     # Autolabeling control
     options.add_argument('--autolabel', action='store_true', help='Autolabel the dataset')
-    options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: contours/autodistil')
+    options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: rawcontours/autodistil')
     # Model control
     options.add_argument('--train', action='store_true', help='Train the model')
     options.add_argument('--train-method', type=str, default='contours', help='Method to use for training the YOLOv8 model can be either: contours/autodistil')

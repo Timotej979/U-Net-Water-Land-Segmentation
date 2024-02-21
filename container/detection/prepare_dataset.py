@@ -38,8 +38,8 @@ class PrepareDataset():
         os.makedirs(os.path.join(self.root, 'autodistil-det'), exist_ok=True)
 
         # Create train val and test directories in the raw, contour and autodistil directories with the images and labels folders
+        os.makedirs(os.path.join(self.root, 'raw-det', 'images'), exist_ok=True)
         for folders in ['train', 'val', 'test']:
-            os.makedirs(os.path.join(self.root, 'raw-det', 'images', folders), exist_ok=True)
             os.makedirs(os.path.join(self.root, 'contour-det', 'gt-rgb', folders), exist_ok=True)
             os.makedirs(os.path.join(self.root, 'contour-det', 'gt-gray', folders), exist_ok=True)
             os.makedirs(os.path.join(self.root, 'contour-det', 'images', folders), exist_ok=True)
@@ -63,21 +63,21 @@ class PrepareDataset():
         # Copy the images and masks to the train, val and test directories respectively
         for file in self.train:
             # Images for raw and autodistil are RGB, while images for contour are WASR
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'train'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images'))
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'train'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'train'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'train'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'images', 'train'))
 
         for file in self.val:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'val'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images'))
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'val'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'val'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'val'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'images', 'val'))
 
         for file in self.test:
-            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images', 'test'))
+            shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'raw-det', 'images'))
             shutil.copy(os.path.join(self.root, 'RGB', file), os.path.join(self.root, 'autodistil-det', 'images', 'test'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-rgb', 'test'))
             shutil.copy(os.path.join(self.root, 'WASR', file.replace(".jpg", ".png")), os.path.join(self.root, 'contour-det', 'gt-gray', 'test'))
@@ -180,7 +180,18 @@ class PrepareDataset():
     def resize_images(self, size, preserve_aspect_ratio):
         # Resize all images in datasets
         for dataset in ['raw-det', 'contour-det', 'autodistil-det']:
-            if dataset == 'contour-det':
+            # Resize the images of raw dataset
+            if dataset == 'raw-det':
+                for file in os.listdir(os.path.join(self.root, dataset, 'images')):
+                    img_path = os.path.join(self.root, dataset, 'images', file)
+                    img = Image.open(img_path)
+                    if preserve_aspect_ratio:
+                        img.thumbnail(size)
+                    else:
+                        img = img.resize(size)
+                    img.save(img_path)
+            # Resize the images for contour dataset
+            elif dataset == 'contour-det':
                 for folder in ['train', 'val', 'test']:
                     # Images
                     for file in os.listdir(os.path.join(self.root, dataset, 'images', folder)):
@@ -209,6 +220,7 @@ class PrepareDataset():
                         else:
                             img = img.resize(size)
                         img.save(img_path)
+            # Resize the images for autodistil dataset
             else:
                 # Images
                 for folder in ['train', 'val', 'test']:
