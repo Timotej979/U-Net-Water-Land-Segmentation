@@ -41,24 +41,25 @@ class AutoLabeling():
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
             mask = cv2.bitwise_not(mask)
-            # Find contours in binary image
+            # Find contours in binary image and check if there are no contours
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            # Create a rectangle around the contours
-            for contour in contours:
-                # Get the area of the contour
-                area = abs(cv2.contourArea(contour))
-                if area < mask_size * self.max_contour_area:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image
-                    cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
-                    with open(os.path.join(self.root, 'contour-det', 'labels', 'train', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
-                    with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+            if len(contours) != 0:
+                # Create a rectangle around the contours
+                for contour in contours:
+                    # Get the area of the contour
+                    area = abs(cv2.contourArea(contour))
+                    if area < mask_size * self.max_contour_area:
+                        x, y, w, h = cv2.boundingRect(contour)
+                        # Draw the rectangle on the original image
+                        cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        with open(os.path.join(self.root, 'contour-det', 'labels', 'train', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                        with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-            # Save the original image
-            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', img), original)
+                # Save the original image
+                cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', img), original)
 
         # Label all images in the validation set
         for img in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val')):
@@ -69,24 +70,25 @@ class AutoLabeling():
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
             mask = cv2.bitwise_not(mask)
-            # Find contours in binary image
+            # Find contours in binary image and check if there are no contours
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            # Create a rectangle around the contours
-            for contour in contours:
-                # Get the area of the contour
-                area = abs(cv2.contourArea(contour))
-                if area < mask_size * self.max_contour_area:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image
-                    cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
-                    with open(os.path.join(self.root, 'contour-det', 'labels', 'val', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
-                    with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+            if len(contours) != 0:
+                # Create a rectangle around the contours
+                for contour in contours:
+                    # Get the area of the contour
+                    area = abs(cv2.contourArea(contour))
+                    if area < mask_size * self.max_contour_area:
+                        x, y, w, h = cv2.boundingRect(contour)
+                        # Draw the rectangle on the original image
+                        cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        with open(os.path.join(self.root, 'contour-det', 'labels', 'val', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                        with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-            # Save the original image
-            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', img), original)
+                # Save the original image
+                cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', img), original)
 
         # Label all images in the test set
         for img in os.listdir(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test')):
@@ -97,24 +99,25 @@ class AutoLabeling():
             mask_size = mask.shape[0] * mask.shape[1]
             # Invert the mask
             mask = cv2.bitwise_not(mask)
-            # Find contours in binary image
+            # Find contours in binary image and check if there are no contours
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            # Create a rectangle around the contours
-            for contour in contours:
-                # Get the area of the contour
-                area = abs(cv2.contourArea(contour))
-                if area < mask_size * self.max_contour_area:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    # Draw the rectangle on the original image
-                    cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                    # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
-                    with open(os.path.join(self.root, 'contour-det', 'labels', 'test', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
-                    with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                        file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+            if len(contours) != 0:
+                # Create a rectangle around the contours
+                for contour in contours:
+                    # Get the area of the contour
+                    area = abs(cv2.contourArea(contour))
+                    if area < mask_size * self.max_contour_area:
+                        x, y, w, h = cv2.boundingRect(contour)
+                        # Draw the rectangle on the original image
+                        cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        with open(os.path.join(self.root, 'contour-det', 'labels', 'test', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                        with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
+                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
 
-            # Save the original image
-            cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', img), original)
+                # Save the original image
+                cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', img), original)
 
         # Create the yaml config file for the raw dataset for YOLOv8
         with open(os.path.join(self.root, 'raw-det', 'config.yaml'), 'w') as file:

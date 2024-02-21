@@ -1,0 +1,3 @@
+test: /app/container/dataset/raw-det/images
+nc: 1
+names: ['obstacle']
