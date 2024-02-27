@@ -28,3 +28,6 @@ COPY requirements.txt requirements.txt
 # Install Python dependencies
 RUN pip3 install -r requirements.txt && \
     apt-get clean
+
+# Enable wandb for yolo
+CMD [ "yolo settings wandb=True" ]

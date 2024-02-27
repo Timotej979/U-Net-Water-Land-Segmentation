@@ -52,11 +52,11 @@ class AutoLabeling():
                         x, y, w, h = cv2.boundingRect(contour)
                         # Draw the rectangle on the original image
                         cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and just xyxy for raw datasets
                         with open(os.path.join(self.root, 'contour-det', 'labels', 'train', img.replace('.png', '.txt')), 'w') as file:
                             file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
                         with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                            file.write(f'{x} {y} {x+w} {y+h}\n')
 
                 # Save the original image
                 cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'train', img), original)
@@ -81,11 +81,11 @@ class AutoLabeling():
                         x, y, w, h = cv2.boundingRect(contour)
                         # Draw the rectangle on the original image
                         cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and just xyxy for raw datasets
                         with open(os.path.join(self.root, 'contour-det', 'labels', 'val', img.replace('.png', '.txt')), 'w') as file:
                             file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
                         with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                            file.write(f'{x} {y} {x+w} {y+h}\n')
 
                 # Save the original image
                 cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'val', img), original)
@@ -110,20 +110,14 @@ class AutoLabeling():
                         x, y, w, h = cv2.boundingRect(contour)
                         # Draw the rectangle on the original image
                         cv2.rectangle(original, (x, y), (x+w, y+h), (0, 0, 255), 2)
-                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and raw datasets
+                        # Write the normalized labels in YOLOv8 format to the labels folder for contour and just xyxy for raw datasets
                         with open(os.path.join(self.root, 'contour-det', 'labels', 'test', img.replace('.png', '.txt')), 'w') as file:
                             file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
                         with open(os.path.join(self.root, 'raw-det', 'labels', img.replace('.png', '.txt')), 'w') as file:
-                            file.write(f'0 {(x + w / 2) / mask.shape[1]} {(y + h / 2) / mask.shape[0]} {w / mask.shape[1]} {h / mask.shape[0]}\n')
+                            file.write(f'{x} {y} {x+w} {y+h}\n')
 
                 # Save the original image
                 cv2.imwrite(os.path.join(self.root, 'contour-det', 'gt-rgb', 'test', img), original)
-
-        # Create the yaml config file for the raw dataset for YOLOv8
-        with open(os.path.join(self.root, 'raw-det', 'config.yaml'), 'w') as file:
-            file.write('test: /app/container/dataset/raw-det/images\n')
-            file.write('nc: 1\n')
-            file.write('names: [\'obstacle\']\n')
 
         # Create the yaml config file for the contour dataset for YOLOv8
         with open(os.path.join(self.root, 'contour-det', 'config.yaml'), 'w') as file:
@@ -132,6 +126,8 @@ class AutoLabeling():
             file.write('test: /app/container/dataset/contour-det/images/test\n')
             file.write('nc: 1\n')
             file.write('names: [\'obstacle\']\n')
+
+        print("Rawcontour detection labeling done")
 
     # Label the ground truth using autodistil
     def label_autodistil(self):
@@ -162,6 +158,7 @@ class AutoLabeling():
                 output_folder=folder.replace("images", "labels"),
             )
 
+        print("Autodistil labeling done")
 
 
 

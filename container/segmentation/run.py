@@ -46,6 +46,7 @@ class ModelControler():
         self.learning_rate = 0.0001
         self.betas = (0.9, 0.999)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Device: {self.device}")
 
         # Define the transformations
         self.define_transformations()
@@ -166,7 +167,7 @@ class ModelControler():
 
         for epoch in range(self.opt.epochs):
             # Initialize a new run
-            self.initialize_new_run(f"segmentation-train-val-run-{epoch+1}")
+            self.initialize_new_run(f"UNet-train-val-run-{epoch+1}")
             
             # Print the current epoch
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
@@ -376,7 +377,7 @@ class ModelControler():
         start_time = time.time()
 
         # Initialize a new run
-        self.initialize_new_run("segmentation-test-run")
+        self.initialize_new_run("UNet-test-run")
 
         with torch.no_grad():
             for images, masks, _, _ in self.testloader:
@@ -469,5 +470,3 @@ if __name__ == "__main__":
     if opt.test:
         print("Testing the segmentation model...")
         model_controler.test()
-
-    
