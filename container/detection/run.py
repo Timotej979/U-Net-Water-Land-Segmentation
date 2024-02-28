@@ -106,8 +106,8 @@ class ModelControler():
             print("Invalid model size")
             exit(1)
         # Validate the model
-        if self.opt.device == 'cpu':
-            results = model.predict(source=test_images, stream=True, device=self.opt.device)
+        if self.device == 'cpu':
+            results = model.predict(source=test_images, stream=True, device=self.device)
         else:
             results = model.predict(source=test_images, stream=True, device=0)
 
