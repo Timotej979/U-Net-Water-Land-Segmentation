@@ -106,8 +106,11 @@ class ModelControler():
             print("Invalid model size")
             exit(1)
         # Validate the model
-        results = model.predict(source=test_images, device=self.device, stream=True)
-    
+        if self.opt.device == 'cpu':
+            results = model.predict(source=test_images, stream=True, device=self.opt.device)
+        else:
+            results = model.predict(source=test_images, stream=True, device=0)
+
         # Initialize lists to store IoU and Dice score for each image
         iou_list = []
         dice_score_list = []

@@ -9,9 +9,9 @@ python3 /app/container/detection/run.py --prepare --resize-prepared --resize-pre
 #python3 /app/container/detection/run.py --prepare --resize-prepared --resize-prepared-size 512,384 --autolabel --autolabel-method autodistil
 
 # Run segmentation
-#python3 /app/container/segmentation/run.py --train --test
+python3 /app/container/segmentation/run.py --train --test
 
 # Run detection
-python3 /app/container/detection/run.py --test --test-method pretrained
+#python3 /app/container/detection/run.py --test --test-method pretrained
 #python3 /app/container/detection/run.py --test --test-method contours
 #python3 /app/container/detection/run.py --test --test-method autodistil
