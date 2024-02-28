@@ -225,11 +225,11 @@ class ModelControler():
                         predicted_masks_bin = torch.sigmoid(predictions) > 0.5
 
                         # Calculate IoU for validation data
-                        iou, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
-                        iou, dice_score, pixel_acc = iou.cpu().numpy(), dice_score.cpu().numpy(), pixel_acc.cpu().numpy()
+                        iou_score, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
+                        iou_score, dice_score, pixel_acc = iou_score.cpu().numpy(), dice_score.cpu().numpy(), pixel_acc.cpu().numpy()
                         print('IoU: ', iou, '\nDice score: ', dice_score, '\nPixel accuracy: ', pixel_acc)
 
-                        iou.append(iou)
+                        iou.append(iou_score)
                         dice.append(dice_score)
                         pixel_accuracy.append(pixel_acc)
 
@@ -395,7 +395,7 @@ class ModelControler():
                 iou, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
                 iou, dice_score, pixel_acc = iou.cpu().numpy(), dice_score.cpu().numpy(), pixel_acc.cpu().numpy()
                 print('IoU: ', iou, '\nDice score: ', dice_score, '\nPixel accuracy: ', pixel_acc)
-                
+
                 iou.append(iou)
                 dice.append(dice_score)
                 pixel_accuracy.append(pixel_acc)
