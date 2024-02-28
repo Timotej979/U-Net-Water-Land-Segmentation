@@ -225,7 +225,10 @@ class ModelControler():
                         predicted_masks_bin = torch.sigmoid(predictions) > 0.5
 
                         # Calculate IoU for validation data
-                        iou, dice_score, pixel_acc = self.calculate_iou_f1(predicted_masks_bin, masks).cpu().numpy()
+                        iou, dice_score, pixel_acc = self.calculate_iou_f1(predicted_masks_bin, masks)
+                        print('IoU: ', iou)
+                        print('Dice score: ', dice_score)
+                        print('Pixel accuracy: ', pixel_acc)
                         iou.append(iou)
                         dice.append(dice_score)
                         pixel_accuracy.append(pixel_acc)
@@ -389,7 +392,10 @@ class ModelControler():
                 predicted_masks_bin = torch.sigmoid(images) > 0.5
 
                 # Calculate IoU, Dice score, Pixel Accuracy and loss for test data
-                iou, dice_score, pixel_acc = self.calculate_iou_f1(predicted_masks_bin, masks).cpu().numpy()
+                iou, dice_score, pixel_acc = self.calculate_iou_f1(predicted_masks_bin, masks)
+                print('IoU: ', iou)
+                print('Dice score: ', dice_score)
+                print('Pixel accuracy: ', pixel_acc)
                 iou.append(iou)
                 dice.append(dice_score)
                 pixel_accuracy.append(pixel_acc)
@@ -448,7 +454,7 @@ if __name__ == "__main__":
     options.add_argument('--datasetRoot', type=str, default='/app/container/dataset', help='Root directory of the dataset')
     options.add_argument('--trainTestRatio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--trainValRatio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--batchsize', type=int, default=2, help='Batch size')
+    options.add_argument('--batchsize', type=int, default=4, help='Batch size')
     options.add_argument('--imagesize', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
     options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
     opt = options.parse_args()
