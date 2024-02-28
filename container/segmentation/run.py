@@ -126,7 +126,6 @@ class ModelControler():
     # Function to train the model
     def train(self):
         # Initialize train and validation datasets
-        print(os.path.join(self.opt.datasetRoot, 'train-seg'))
         train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train-seg'),
                                    image_only_transform=self.image_only_transform_train,
                                    transform=self.image_and_mask_transform_train)

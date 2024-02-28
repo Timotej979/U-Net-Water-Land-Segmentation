@@ -221,8 +221,8 @@ class DatasetFolder(VisionDataset):
         #     raise ValueError("The class_to_idx parameter cannot be None.")
         # return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
-        img_dir = os.path.join(directory, 'images-seg')
-        mask_dir = os.path.join(directory, 'masks-seg')
+        img_dir = os.path.join(directory, 'images')
+        mask_dir = os.path.join(directory, 'masks')
 
         # if (extensions == None) ^ (is_valid_file == None):
         #     raise ValueError("both extensions and is_valid_file should not be passed")
