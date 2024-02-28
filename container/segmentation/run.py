@@ -157,7 +157,10 @@ class ModelControler():
         val_dice_over_time = []
         val_pixel_accuracy_over_time = []
 
-        # Initialize the best IoU list
+        # Initialize the best IoU vars and lists
+        best_iou = 0
+        best_dice = 0
+        best_pixel_accuracy = 0
         best_iou_over_time = []
         best_dice_over_time = []
         best_pixel_accuracy_over_time = []
@@ -227,7 +230,6 @@ class ModelControler():
                         # Calculate IoU for validation data
                         iou_score, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
                         iou_score, dice_score, pixel_acc = iou_score.cpu().numpy(), dice_score.cpu().numpy(), pixel_acc.cpu().numpy()
-                        print('IoU: ', iou_score, '\nDice score: ', dice_score, '\nPixel accuracy: ', pixel_acc)
 
                         iou.append(iou_score)
                         dice.append(dice_score)
@@ -394,7 +396,6 @@ class ModelControler():
                 # Calculate IoU, Dice score, Pixel Accuracy and loss for test data
                 iou_score, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
                 iou_score, dice_score, pixel_acc = iou_score.cpu().numpy(), dice_score.cpu().numpy(), pixel_acc.cpu().numpy()
-                print('IoU: ', iou_score, '\nDice score: ', dice_score, '\nPixel accuracy: ', pixel_acc)
 
                 iou.append(iou_score)
                 dice.append(dice_score)
