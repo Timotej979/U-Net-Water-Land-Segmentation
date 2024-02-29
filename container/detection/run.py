@@ -68,15 +68,58 @@ class ModelControler():
             print("Invalid autolabeling method")
             exit(1)
 
-    def train_contour(self):
-        #TODO
-        pass
+    def train_val_contour(self):
+        # Initialize a new run
+        self.initialize_new_run("YOLOv8-contour-model-train")
+
+        # Define the dataset configuration
+        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+        # Load the YOLOv8 model depending on the size
+        if self.opt.model_size == 'n':
+            model = YOLO('/app/container/detection/weights/yolov8n.pt')
+        elif self.opt.model_size == 's':
+            model = YOLO('/app/container/detection/weights/yolov8s.pt')
+        elif self.opt.model_size == 'm':
+            model = YOLO('/app/container/detection/weights/yolov8m.pt')
+        elif self.opt.model_size == 'l':
+            model = YOLO('/app/container/detection/weights/yolov8l.pt')
+        elif self.opt.model_size == 'x':
+            model = YOLO('/app/container/detection/weights/yolov8x.pt')
+        else:
+            print("Invalid model size")
+            exit(1)
+
+        # Train the model
+        if self.device == 'cpu':
+            results = model.train(data=contour_ds, epochs=self.opt.epochs, batch=-1, device=self.device)
+        else:
+            results = model.train(data=contour_ds, epochs=self.opt.epochs, batch=-1, device=0)
+        
+        print(results)
+
+        # Stop wandb logging
+        wandb.finish()
+
+        # Initialize a new run
+        self.initialize_new_run("YOLOv8-contour-model-val")
+
+        # Validate the model
+        if self.device == 'cpu':
+            metrics = model.val(data=contour_ds, batch=-1, device=self.device)
+        else:
+            metrics = model.val(data=contour_ds, batch=-1, device='0')
+
+        print(metrics)
+
+        # Stop wandb logging 
+        wandb.finish()
+
 
     def test_contour(self):
         # TODO
         pass
 
-    def train_autodistil(self):
+    def train_val_autodistil(self):
         #TODO
         pass
 
@@ -109,7 +152,7 @@ class ModelControler():
         if self.device == 'cpu':
             results = model.predict(source=test_images, stream=True, device=self.device)
         else:
-            results = model.predict(source=test_images, stream=True, device=0)
+            results = model.predict(source=test_images, stream=True, device='0')
 
         # Initialize lists to store IoU and Dice score for each image
         iou_list = []
@@ -132,8 +175,8 @@ class ModelControler():
                 evaluation_results = ModelControler.compare_predictions(pred_boxes, ground_truth)
 
                 # Append IoU and Dice score to the lists
-                iou_list.append(evaluation_results['image_iou'])
-                dice_score_list.append(evaluation_results['image_dice_score'])
+                iou_list.append(evaluation_results['test/image_iou'])
+                dice_score_list.append(evaluation_results['test/image_dice_score'])
                 # Log the evaluation results
                 wandb.log(evaluation_results)
             # If the label file does not exist set the IoU and Dice score to the worst possible value
@@ -145,7 +188,7 @@ class ModelControler():
         mean_iou = sum(iou_list) / len(iou_list) if len(iou_list) > 0 else 0.0
         mean_dice_score = sum(dice_score_list) / len(dice_score_list) if len(dice_score_list) > 0 else 0.0
         # Log mean IoU and mean Dice score
-        wandb.log({'mean_iou': mean_iou, 'mean_dice_score': mean_dice_score})
+        wandb.log({'test/mean_iou': mean_iou, 'test/mean_dice_score': mean_dice_score})
         # Stop wandb logging
         wandb.finish()
         
@@ -225,7 +268,7 @@ class ModelControler():
         mean_iou = sum(iou_list) / len(iou_list) if len(iou_list) > 0 else 0.0
         mean_dice_score = sum(dice_score_list) / len(dice_score_list) if len(dice_score_list) > 0 else 0.0
         # Return the mean IoU and mean Dice score as images IoU and Dice score
-        return {'image_iou': mean_iou, 'image_dice_score': mean_dice_score}
+        return {'test/image_iou': mean_iou, 'test/image_dice_score': mean_dice_score}
 
 
 if __name__ == "__main__":
@@ -269,11 +312,11 @@ if __name__ == "__main__":
     # Train the model and generate the weights
     if opt.train_method == 'contours':
         print("Training the detection model using contours...")
-        model_controler.train_contour()
+        model_controler.train_val_contour()
 
     if opt.train_method == 'autodistil':
         print("Training the detection model using autodistil...")
-        model_controler.train_autodistil()
+        model_controler.train_val_autodistil()
 
     # Test the model and evaluate it
     if opt.test_method == 'pretrained':
