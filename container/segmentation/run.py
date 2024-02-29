@@ -168,9 +168,10 @@ class ModelControler():
         # Start training
         start_time = time.time()
 
+        # Initialize a new run
+        self.initialize_new_run("UNet-train-val-run")
+
         for epoch in range(self.opt.epochs):
-            # Initialize a new run
-            self.initialize_new_run(f"UNet-train-val-run-{epoch+1}")
             
             # Print the current epoch
             print("Training epoch: {}/{}".format(epoch+1, self.opt.epochs))
@@ -201,16 +202,8 @@ class ModelControler():
                 train_loss_over_time.append(avg_loss)
 
                 # Wandb draw loss over time
-                data = [{"Epoch": x, "Train Loss": y} for x, y in enumerate(train_loss_over_time)]
-                table = wandb.Table(data=data, columns=["Epoch", "Train Loss"])
-                wandb.log(
-                    {
-                        "train/loss_ot": wandb.plot.line(
-                            table, "Epoch", "Train Loss", title="Train Loss over time"
-                        )
-                    }
-                )
-
+                wandb.log({"train/avg_loss": avg_loss})
+                wandb.log({"train/loss_ot": train_loss_over_time})
 
                 # Validation
                 model.eval()
@@ -244,66 +237,53 @@ class ModelControler():
                 iou = np.mean(iou)
                 dice = np.mean(dice)
                 pixel_accuracy = np.mean(pixel_accuracy)
+                avg_val_loss = np.mean(avg_val_loss)
+                # Append the results to the lists
                 val_loss_over_time.append(avg_val_loss)
                 val_iou_over_time.append(iou)
                 val_dice_over_time.append(dice)
                 val_pixel_accuracy_over_time.append(pixel_accuracy)
-                avg_val_loss = np.mean(avg_val_loss)
-                
 
+                # Wandb log loss, IoU, Dice and Pixel Accuracy over time
+                wandb.log({"val/avg_loss": avg_val_loss})
+                wandb.log({"val/avg_iou": iou})
+                wandb.log({"val/avg_dice": dice})
+                wandb.log({"val/avg_pixel_accuracy": pixel_accuracy})
+                wandb.log({ "val/loss_ot": val_loss_over_time })
+                wandb.log({ "val/iou_ot": val_iou_over_time })
+                wandb.log({ "val/dice_ot": val_dice_over_time })
+                wandb.log({ "val/pixel_accuracy_ot": val_pixel_accuracy_over_time })
+                
                 # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
                     print(f"New best found. Current best IoU: {iou}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './segmentation/output/UNet_IoU_weights.pth')
                     best_iou_over_time.append(iou)
+                    best_iou = iou
 
                     # Wandb draw best IoU over time
-                    data = [{"Epoch": x, "Best IoU": y} for x, y in enumerate(best_iou_over_time)]
-                    table = wandb.Table(data=data, columns=["Epoch", "Best IoU"])
-                    wandb.log({ "val/best_iou": wandb.plot.line( table, "Epoch", "Best IoU", title="Best IoU over time" ) })
+                    wandb.log({'val/best_iou': best_iou_over_time[-1]})
 
                 if dice > best_dice:
                     print(f"New best found. Current best Dice: {dice}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './segmentation/output/UNet_Dice_weights.pth')
                     best_dice_over_time.append(dice)
+                    best_dice = dice
 
                     # Wandb draw best Dice over time
-                    data = [{"Epoch": x, "Best Dice": y} for x, y in enumerate(best_dice_over_time)]
-                    table = wandb.Table(data=data, columns=["Epoch", "Best Dice"])
-                    wandb.log({ "val/best_dice": wandb.plot.line( table, "Epoch", "Best Dice", title="Best Dice over time" ) })
+                    wandb.log({'val/best_dice': best_dice_over_time[-1]})
 
                 if pixel_accuracy > best_pixel_accuracy:
                     print(f"New best found. Current best Pixel Accuracy: {pixel_accuracy}")
                     torch.save({'epoch': epoch, 'state_dict': model.state_dict()}, './segmentation/output/UNet_Pixel_Accuracy_weights.pth')
                     best_pixel_accuracy_over_time.append(pixel_accuracy)
+                    best_pixel_accuracy = pixel_accuracy
 
                     # Wandb draw best Pixel Accuracy over time
-                    data = [{"Epoch": x, "Best Pixel Accuracy": y} for x, y in enumerate(best_pixel_accuracy_over_time)]
-                    table = wandb.Table(data=data, columns=["Epoch", "Best Pixel Accuracy"])
-                    wandb.log({ "val/best_pixel_accuracy": wandb.plot.line( table, "Epoch", "Best Pixel Accuracy", title="Best Pixel Accuracy over time" ) })
+                    wandb.log({'val/best_pixel_accuracy': best_pixel_accuracy_over_time[-1]})
 
                 # Print the results
                 print("Average IOU: {:.7f}     Best IOU: {:.7f}     Average Dice: {:.7f}     Best Dice: {:.7f}     Average Pixel Accuracy: {:.7f}     Best Pixel Accuracy: {:.7f}    Average Validation Loss: {:.7f}".format(iou, best_iou, dice, best_dice, pixel_accuracy, best_pixel_accuracy, avg_val_loss))
-
-                # Wandb draw loss over time
-                data = [{"Epoch": x, "Val Loss": y} for x, y in enumerate(val_loss_over_time)]
-                table = wandb.Table(data=data, columns=["Epoch", "Val Loss"])
-                wandb.log({ "val/loss_ot": wandb.plot.line( table, "Epoch", "Val Loss", title="Val Loss over time" ) })
-
-                # Wandb draw IoU over time
-                data = [{"Epoch": x, "Val IoU": y} for x, y in enumerate(val_iou_over_time)]
-                table = wandb.Table(data=data, columns=["Epoch", "Val IoU"])
-                wandb.log({ "val/iou_ot": wandb.plot.line( table, "Epoch", "Val IoU", title="Val IoU over time" ) })
-
-                # Wandb draw Dice over time
-                data = [{"Epoch": x, "Val Dice": y} for x, y in enumerate(val_dice_over_time)]
-                table = wandb.Table(data=data, columns=["Epoch", "Val Dice"])
-                wandb.log({ "val/dice_ot": wandb.plot.line( table, "Epoch", "Val Dice", title="Val Dice over time" ) })
-
-                # Wandb draw Pixel Accuracy over time
-                data = [{"Epoch": x, "Val Pixel Accuracy": y} for x, y in enumerate(val_pixel_accuracy_over_time)]
-                table = wandb.Table(data=data, columns=["Epoch", "Val Pixel Accuracy"])
-                wandb.log({ "val/pixel_accuracy_ot": wandb.plot.line( table, "Epoch", "Val Pixel Accuracy", title="Val Pixel Accuracy over time" ) })
 
                 # Log the results
                 with open(logfile, 'a') as file:
@@ -313,9 +293,8 @@ class ModelControler():
             except KeyboardInterrupt:
                 break
 
-            finally:
-                # Finish the run
-                wandb.finish()
+        # Finish the run
+        wandb.finish()
 
         print('\n----------------------------------------------------------------')
         # Print total training time
@@ -408,20 +387,11 @@ class ModelControler():
         # Finish the run
         wandb.finish()
 
-        # Draw IoU over time
-        data = [{"Epoch": x, "Test IoU": y} for x, y in enumerate(iou)]
-        table = wandb.Table(data=data, columns=["Epoch", "Test IoU"])
-        wandb.log({ "test/iou_ot": wandb.plot.line( table, "Epoch", "Test IoU", title="Test IoU over time" ) })
-
-        # Draw Dice over time
-        data = [{"Epoch": x, "Test Dice": y} for x, y in enumerate(dice)]
-        table = wandb.Table(data=data, columns=["Epoch", "Test Dice"])
-        wandb.log({ "test/dice_ot": wandb.plot.line( table, "Epoch", "Test Dice", title="Test Dice over time" ) })
-
-        # Draw Pixel Accuracy over time
-        data = [{"Epoch": x, "Test Pixel Accuracy": y} for x, y in enumerate(pixel_accuracy)]
-        table = wandb.Table(data=data, columns=["Epoch", "Test Pixel Accuracy"])
-        wandb.log({ "test/pixel_accuracy_ot": wandb.plot.line( table, "Epoch", "Test Pixel Accuracy", title="Test Pixel Accuracy over time" ) })
+        # Draw IoU, Dice and Pixel Accuracy over time
+        wandb.log({ "test/loss_ot": avg_test_loss })
+        wandb.log({ "test/iou_ot": iou })
+        wandb.log({ "test/dice_ot": dice })
+        wandb.log({ "test/pixel_accuracy_ot": pixel_accuracy })
 
         # Print total testing time
         end_time = time.time()
