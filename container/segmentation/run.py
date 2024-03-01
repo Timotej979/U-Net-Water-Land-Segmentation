@@ -249,10 +249,6 @@ class ModelControler():
                 wandb.log({"val/avg_iou": iou})
                 wandb.log({"val/avg_dice": dice})
                 wandb.log({"val/avg_pixel_accuracy": pixel_accuracy})
-                wandb.log({ "val/loss_ot": val_loss_over_time })
-                wandb.log({ "val/iou_ot": val_iou_over_time })
-                wandb.log({ "val/dice_ot": val_dice_over_time })
-                wandb.log({ "val/pixel_accuracy_ot": val_pixel_accuracy_over_time })
                 
                 # Save network weights when the accuracy is great than the best_acc
                 if iou > best_iou:
@@ -336,7 +332,7 @@ class ModelControler():
 
         # Load the CNN model, loss_function and weights
         model = UNet().to(self.device)
-        l_bce = nn.BCEWithLogitsLoss()
+        l_bce = torch.nn.BCEWithLogitsLoss()
 
         # Load the best weights
         if self.opt.best_weights == 'IoU':
@@ -384,26 +380,27 @@ class ModelControler():
                 # Log the results
                 wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1], "test/dice": dice[-1], "test/pixel_accuracy": pixel_accuracy[-1]})
 
-        # Finish the run
-        wandb.finish()
-
-        # Draw IoU, Dice and Pixel Accuracy over time
-        wandb.log({ "test/loss_ot": avg_test_loss })
-        wandb.log({ "test/iou_ot": iou })
-        wandb.log({ "test/dice_ot": dice })
-        wandb.log({ "test/pixel_accuracy_ot": pixel_accuracy })
-
-        # Print total testing time
-        end_time = time.time()
-        elapsed_time = datetime.timedelta(seconds=(end_time - start_time))
-        print(f"Total testing time: {elapsed_time}")
-
         # Calculate the average IoU and loss over the test set
         iou = np.mean(iou)
         dice = np.mean(dice)
         pixel_accuracy = np.mean(pixel_accuracy)
         avg_test_loss = np.mean(avg_test_loss)
 
+        # Log the results
+        wandb.log({'test/avg_iou': iou})
+        wandb.log({'test/avg_dice': dice})
+        wandb.log({'test/avg_pixel_accuracy': pixel_accuracy})
+        wandb.log({'test/avg_loss': avg_test_loss})
+
+         # Finish the run
+        wandb.finish()
+
+        # Print total testing time
+        end_time = time.time()
+        elapsed_time = datetime.timedelta(seconds=(end_time - start_time))
+        print(f"Total testing time: {elapsed_time}")
+
+        # Print the results
         print("Average Test IOU: {:.7f}     Average Test Dice: {:.7f}     Average Test Pixel Accuracy: {:.7f}     Average Test Loss: {:.7f}".format(iou, dice, pixel_accuracy, avg_test_loss))
         
 
