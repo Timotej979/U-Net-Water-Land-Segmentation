@@ -40,7 +40,7 @@ class ModelControler():
         self.opt = opt
         
         # Dataset initialization
-        self.dataset_preparation_class = PrepareDataset(self.opt.datasetRoot, self.opt.trainValRatio, self.opt.trainTestRatio)
+        self.dataset_preparation_class = PrepareDataset(self.opt.dataset_root, self.opt.train_val_ratio, self.opt.train_test_ratio)
 
         # Model hyperparameter and device initialization
         self.learning_rate = 0.0001
@@ -87,7 +87,7 @@ class ModelControler():
                                                                                 "learning_rate": self.learning_rate,
                                                                                 "betas": self.betas,
                                                                                 "epochs": self.opt.epochs,
-                                                                                "batch_size": self.opt.batchsize,
+                                                                                "batch_size": self.opt.batch_size,
                                                                             })
 
     #######################################################################################################################
@@ -108,7 +108,7 @@ class ModelControler():
         PRE_STD = [0.5, 0.5, 0.5]
         
         # Define transforms for dataset augmentation
-        self.image_and_mask_transform_train=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
+        self.image_and_mask_transform_train=A.Compose([A.Resize(self.opt.image_size[0], self.opt.image_size[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
@@ -116,7 +116,7 @@ class ModelControler():
         self.image_only_transform_train=A.Compose([A.Normalize(PRE_MEAN, PRE_STD),
                                             A.RandomBrightnessContrast()])
         
-        self.image_and_mask_transform_test=A.Compose([A.Resize(self.opt.imagesize[0], self.opt.imagesize[1]),
+        self.image_and_mask_transform_test=A.Compose([A.Resize(self.opt.image_size[0], self.opt.image_size[1]),
                                                 A.HorizontalFlip(p=0.5),
                                                 A.VerticalFlip(p=0.5),
                                                     ToTensorV2()])
@@ -126,19 +126,19 @@ class ModelControler():
     # Function to train the model
     def train(self):
         # Initialize train and validation datasets
-        train_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'train-seg'),
+        train_data = DatasetFolder(root=os.path.join(self.opt.dataset_root, 'train-seg'),
                                    image_only_transform=self.image_only_transform_train,
                                    transform=self.image_and_mask_transform_train)
 
-        val_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'val-seg'),
+        val_data = DatasetFolder(root=os.path.join(self.opt.dataset_root, 'val-seg'),
                                  image_only_transform=self.image_only_transform_test,
                                  transform=self.image_and_mask_transform_test)
 
         print(f"Train dataset stats: number of images: {len(train_data)}")
         print(f"Validation dataset stats: number of images: {len(val_data)}")
 
-        trainloader = DataLoader(train_data, self.opt.batchsize, shuffle=True)
-        valloader = DataLoader(val_data, self.opt.batchsize, shuffle=False)
+        trainloader = DataLoader(train_data, self.opt.batch_size, shuffle=True)
+        valloader = DataLoader(val_data, self.opt.batch_size, shuffle=False)
 
         # Create the output directory
         if not os.path.exists('./segmentation/output'):
@@ -322,13 +322,13 @@ class ModelControler():
     # Function to test the model
     def test(self):
         # Initialize the test dataset
-        test_data = DatasetFolder(root=os.path.join(self.opt.datasetRoot, 'test-seg'),
+        test_data = DatasetFolder(root=os.path.join(self.opt.dataset_root, 'test-seg'),
                                     image_only_transform=self.image_only_transform_test,
                                     transform=self.image_and_mask_transform_test)
 
         print(f"Test dataset stats: number of images: {len(test_data)}")
 
-        testloader = DataLoader(test_data, self.opt.batchsize, shuffle=False)
+        testloader = DataLoader(test_data, self.opt.batch_size, shuffle=False)
 
         # Load the CNN model, loss_function and weights
         model = UNet().to(self.device)
@@ -436,11 +436,11 @@ if __name__ == "__main__":
     options.add_argument('--best-weights', type=str, default='IoU', help='Which weights to use for testing the model: "IoU", "Dice" or "Pixel_Accuracy')
     options.add_argument('--test', action='store_true', help="Test the model.")
     # Configuration
-    options.add_argument('--datasetRoot', type=str, default='/app/container/dataset', help='Root directory of the dataset')
-    options.add_argument('--trainTestRatio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
-    options.add_argument('--trainValRatio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--batchsize', type=int, default=4, help='Batch size')
-    options.add_argument('--imagesize', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Root directory of the dataset')
+    options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
+    options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
+    options.add_argument('--batch-size', type=int, default=4, help='Batch size')
+    options.add_argument('--image-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
     options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
     opt = options.parse_args()
 
