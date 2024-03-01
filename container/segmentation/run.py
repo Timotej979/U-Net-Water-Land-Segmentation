@@ -360,7 +360,7 @@ class ModelControler():
         self.initialize_new_run("UNet-test-run")
 
         with torch.no_grad():
-            for images, masks, _, _ in self.testloader:
+            for images, masks, _, _ in tqdm(testloader):
                 images, masks = images.to(self.device), masks.to(self.device)
 
                 # Feedforward, softmax
