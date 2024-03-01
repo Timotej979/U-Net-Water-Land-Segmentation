@@ -365,7 +365,7 @@ class ModelControler():
 
                 # Feedforward, softmax
                 predictions = model(images)
-                predicted_masks_bin = torch.sigmoid(images) > 0.5
+                predicted_masks_bin = torch.sigmoid(predicitions) > 0.5
 
                 # Calculate IoU, Dice score, Pixel Accuracy and loss for test data
                 iou_score, dice_score, pixel_acc = ModelControler.calculate_iou_f1(predicted_masks_bin, masks)
