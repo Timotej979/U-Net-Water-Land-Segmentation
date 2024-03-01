@@ -383,15 +383,8 @@ class ModelControler():
                 pixel_accuracy.append(pixel_acc)
                 avg_test_loss.append(l_bce(predictions, masks).cpu().detach().numpy())
 
-                # Log the results depending on weights chosen
-                if self.opt.best_weights == 'IoU':
-                    wandb.log({"test/best_iou/loss": avg_test_loss[-1], "test/best_iou/iou": iou[-1], "test/best_iou/dice": dice[-1], "test/pixel_accuracy": pixel_accuracy[-1]})
-                elif self.opt.best_weights == 'Dice':
-                    wandb.log({"test/best_dice/loss": avg_test_loss[-1], "test/best_dice/iou": iou[-1], "test/best_dice/dice": dice[-1], "test/pixel_accuracy": pixel_accuracy[-1]})
-                elif self.opt.best_weights == 'Pixel_Accuracy':
-                    wandb.log({"test/best_pixel_accuracy/loss": avg_test_loss[-1], "test/best_pixel_accuracy/iou": iou[-1], "test/best_pixel_accuracy/dice": dice[-1], "test/pixel_accuracy": pixel_accuracy[-1]})
-                else:
-                    raise ValueError("Invalid best weights")
+                # Log the results
+                wandb.log({"test/loss": avg_test_loss[-1], "test/iou": iou[-1], "test/dice": dice[-1], "test/pixel_accuracy": pixel_accuracy[-1]})
 
         # Calculate the average IoU and loss over the test set
         iou = np.mean(iou)
@@ -399,16 +392,9 @@ class ModelControler():
         pixel_accuracy = np.mean(pixel_accuracy)
         avg_test_loss = np.mean(avg_test_loss)
 
-        # Log the results depending on weights chosen
-        if self.opt.best_weights == 'IoU':
-            wandb.log({'test/best_iou/avg_iou': iou, 'test/best_iou/avg_dice': dice, 'test/best_iou/avg_pixel_accuracy': pixel_accuracy, 'test/best_iou/avg_loss': avg_test_loss})
-        elif self.opt.best_weights == 'Dice':
-            wandb.log({'test/best_dice/avg_iou': iou, 'test/best_dice/avg_dice': dice, 'test/best_dice/avg_pixel_accuracy': pixel_accuracy, 'test/best_dice/avg_loss': avg_test_loss})
-        elif self.opt.best_weights == 'Pixel_Accuracy':
-            wandb.log({'test/best_pixel_accuracy/avg_iou': iou, 'test/best_pixel_accuracy/avg_dice': dice, 'test/best_pixel_accuracy/avg_pixel_accuracy': pixel_accuracy, 'test/best_pixel_accuracy/avg_loss': avg_test_loss})
-        else:
-            raise ValueError("Invalid best weights")
-
+        # Log the results
+        wandb.log({"test/avg_loss": avg_test_loss, "test/avg_iou": iou, "test/avg_dice": dice, "test/avg_pixel_accuracy": pixel_accuracy})
+        
         # Finish the run
         wandb.finish()
 
