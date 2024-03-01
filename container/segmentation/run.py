@@ -360,12 +360,11 @@ class ModelControler():
         self.initialize_new_run("UNet-test-run")
 
         with torch.no_grad():
-            for images, masks, _, _ in tqdm(testloader):
+            for images, masks, img_paths, mask_paths in testloader:
                 images, masks = images.to(self.device), masks.to(self.device)
 
                 # Feedforward, softmax
                 predictions = model(images)
-
                 predicted_masks_bin = torch.sigmoid(images) > 0.5
 
                 # Calculate IoU, Dice score, Pixel Accuracy and loss for test data
