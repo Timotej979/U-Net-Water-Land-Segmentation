@@ -11,7 +11,7 @@ printenv | grep WANDB
 # Run segmentation
 #python3 /app/container/segmentation/run.py --train
 python3 /app/container/segmentation/run.py --test --best-weights IoU
-pyton3 /app/container/segmentation/run.py --test --best-weights Dice
+python3 /app/container/segmentation/run.py --test --best-weights Dice
 python3 /app/container/segmentation/run.py --test --best-weights Pixel_Accuracy
 
 # Run detection
