@@ -103,8 +103,24 @@ than 50 hours of footage while manually driving around the coastal areas. Since 
 
 ## References
 
-[1] Bovcon, B., & Kristan, M. (2021). WaSR--A Water Segmentation and Refinement Maritime Obstacle Detection Network. IEEE Transactions on Cybernetics
+[1] B. Bovcon and M. Kristan. Wasr–a water segmentation and refinement maritime obstacle detection network. IEEE Transactions on Cybernetics.
 
-[2] Bovcon, B., Muhovič, J., Perš, J., & Kristan, M. (2019). The MaSTr1325 dataset for training deep USV obstacle detection models. 2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)
+[2] B. Bovcon, J. Muhoviˇc, J. Perˇs, and M. Kristan. The mastr1325 dataset for training deep usv obstacle detection models. In 2019 IEEE/RSJ International Conference on
+Intelligent Robots and Systems (IROS), pages 3431–3438. IEEE, 2019.
 
-[3] Bovcon, B., Muhovič, J., Vranac, D., Mozetič, D., Perš, J., & Kristan, M. (2021). MODS -- A USV-oriented object detection and obstacle segmentation benchmark. IEEE Transactions on Intelligent Transportation Systems.
+[3] B. Bovcon, J. Perˇs, M. Kristan, et al. Stereo obstacle detection for unmanned surface vehicles by imu-assisted semantic segmentation. Robotics and Autonomous Systems, 104:1–13, 2018.
+
+[4] G. Jocher, A. Chaurasia, and J. Qiu. Ultralytics YOLO, Jan. 2023.
+
+[5] D. M ̈uller, I. Soto-Rey, and F. Kramer. Towards a guideline for evaluation metrics in medical image segmentation. BMC Research Notes, 15(1):210, 2022.
+
+[6] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi. You only look once: Unified, real-time object detection. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 779–788, 2016.
+
+[7] O. Ronneberger, P. Fischer, and T. Brox. U-net: Convolutional networks for biomedical image segmentation. In Medical Image Computing and Computer-Assisted Intervention–
+MICCAI 2015: 18th International Conference, Munich, Germany, October 5-9, 2015, Proceedings, Part III 18, pages 234–241. Springer, 2015.
+
+[8] A. A. Taha, A. Hanbury, and O. A. J. del Toro. A formal method for selecting evaluation metrics for image segmentation. In 2014 IEEE international conference on image processing (ICIP), pages 932–936. IEEE, 2014.
+
+[9] Z. Wang, E. Wang, and Y. Zhu. Image segmentation evaluation: a survey of methods. Artificial Intelligence Review, 53:5637–5674, 2020.
+
+[10] L. ˇZust and M. Kristan. Learning maritime obstacle detection from weak annotations by scaffolding. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 955–964, 2022.
