@@ -101,10 +101,10 @@ ensure dataset variety, primarily designed for semantic segmentation and obstacl
 than 50 hours of footage while manually driving around the coastal areas. Since this is a segmentation dataset each image or rather image pixel of the dataset is labeled with one of the four categories: obstacles or environment, water, sky and Unknown category. The dataset also offers a significant advantage in terms that all images are precisely time-synchronized with on-board GPS and IMU measurements, ensuring accurate alignment for comprehensive analysis.
 
 <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-    <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats1.jpg" alt="Size distribution of obstacles" style="width: 48%;">
-    <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats2.jpg" alt="Average proportion of annotated pixels for each category" style="width: 48%;">
-    <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img1.png" alt="Image example 1 of the dataset" style="width: 48%;">
-    <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img2.png" alt="Image example 2 of the dataset" style="width: 48%;">
+    <img src="./docs/assets/mastr-stats1.jpg" alt="Size distribution of obstacles" style="width: 48%;">
+    <img src="./docs/assets/mastr-stats2.jpg" alt="Average proportion of annotated pixels for each category" style="width: 48%;">
+    <img src="./docs/assets/mastr-img1.png" alt="Image example 1 of the dataset" style="width: 48%;">
+    <img src="./docs/assets/mastr-img2.png" alt="Image example 2 of the dataset" style="width: 48%;">
 </div>
 
 Figure 2: Statistics and image examples of the MaSTr1325 dataset [2]: (1) Size distribution of obstacles, (2) Average proportion of annotated pixels for each category, (3) and (4) Image examples of the dataset
