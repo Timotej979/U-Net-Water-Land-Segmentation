@@ -128,9 +128,10 @@ Figure 3: Statistics of the MODD2 dataset [3]: (1) Size distribution of obstacle
 
 The Water Segmentation and Refinement network (WaSR) [1] [10] developed by Bovcon et al. is a novel deep encoder-decoder architecture designed for maritime environments specifically to fix the problem of many false-positives if we were to use the conventional detectors for autonomous vehicles on ground. Infrastructure based on ResNet101 with atrous convolutions enables the extraction of rich visual features, following it the decoder gradually fuses these features with inertial information from the inertial measurement unit (IMU) on the USV. This approach significantly improves the segmentation accuracy of the water component in the presence of visual ambiguities, such as fog on the horizon. Since the approach is relatively novel it also introduces a custom loss function for semantic separation to enforce the separation of different semantic components to increase robustness. Experimental results showed that this approach out-preformed the current state-of-the-art by 4% in F1 score on a challenging dataset and with strict domain generalization improved the F1 score by 24% while showing great generalization capabilities.
 
-<div style="text-align: center;">
-    <img src="./docs/assets/wasr-arch.png" alt="Centered Image" style="max-width: 100%; max-height: 100%; display: inline-block;">
+<div align="center">
+    <img src="./docs/assets/wasr-arch.png" alt="Centered Image" style="max-width: 100%; max-height: 100%;">
 </div>
+
 
 Figure 4: Architecture of the WaSR network. Encoder generates deep features that are slowly fused in the decoder with an IMU feature channel improving water-edge detection and estimation. Semantic separation loss computed at the end of the encoder drives discriminative feature learning, further reducing false-positives and increasing true-positives
 
