@@ -1,4 +1,4 @@
-# U-Net-Water-Land-Segmentation
+# Integration of U-Net Segmentation and YOLOv8 Object Detection for Unmanned Surface Vehicle Guidance
 
 ![Header](./docs/assets/header.png)
 
