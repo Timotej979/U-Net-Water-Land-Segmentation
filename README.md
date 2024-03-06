@@ -159,8 +159,11 @@ Figure 6: Architecture of the YOLOv8 model
 There are many different performance meassures by which we can evaluate a model on such as true/false positives, true/false negatives, receiver operating curves (ROCs)
 and its areas (ROC-AUC), precision, recall, precision recall curves (PRCs) and its areas (PRC-AUC), F-score and other. Summarized by many articles [9] [5] [8] every score is good for displaying a certain characteristic of the model, however for the task of image segmentation three of the conventionally used measures are intersection over union, dice score (Figure 7) and the regular pixel accuracy.
 
-![dice-score](./docs/assets/dice.png)
-![IoU](./docs/assets/iou.png)
+<div align="center">
+    <img src="./docs/assets/dice.png" alt="Centered Image 2" style="max-width: 100%; max-height: 100%; display: inline-block;">
+    <img src="./docs/assets/iou.png" alt="Centered Image 3" style="max-width: 100%; max-height: 100%; display: inline-block;">
+</div>
+
 
 Figure 7: Two of the measure representations on how we calculate them using the overlap of predictions and ground truth: (1) Dice score, (2) Intersection over Union
 
