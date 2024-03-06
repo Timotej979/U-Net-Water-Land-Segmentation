@@ -100,10 +100,10 @@ The MaSTr1325 dataset [2] is a coastal maritime dataset comprised of 1325 divers
 ensure dataset variety, primarily designed for semantic segmentation and obstacle detection. The dataset was acquired using a small water-surface based USV recording more
 than 50 hours of footage while manually driving around the coastal areas. Since this is a segmentation dataset each image or rather image pixel of the dataset is labeled with one of the four categories: obstacles or environment, water, sky and Unknown category. The dataset also offers a significant advantage in terms that all images are precisely time-synchronized with on-board GPS and IMU measurements, ensuring accurate alignment for comprehensive analysis.
 
-![mastr-stats1](./docs/assets/mastr-stats1.jpg)
-![mastr-stats2](./docs/assets/mastr-stats2.jpg)
-![mastr-img1](./docs/assets/mastr-img1.png)
-![mastr-img2](./docs/assets/mastr-img2.png)
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats1.jpg" width="200" />
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats2.jpg" width="200" />
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img1.jpg" width="200" />
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img2.jpg" width="200" />
 
 Figure 2: Statistics and image examples of the MaSTr1325 dataset [2]: (1) Size distribution of obstacles, (2) Average proportion of annotated pixels for each category, (3) and (4) Image examples of the dataset
 
@@ -174,7 +174,7 @@ the U-Net. We split the dataset using 80% of the images for training and 20% of 
 ![mask](./docs/assets/mask.png)
 ![object](./docs/assets/object.png)
 
-Figure 8: Image exaamples used in the dataset generation process: (1) RGB image, (2) Image segmented using the WaSR network, (3) Gray-scale binarized mask (4) Contour
+Figure 8: Image examples used in the dataset generation process: (1) RGB image, (2) Image segmented using the WaSR network, (3) Gray-scale binarized mask (4) Contour
 detection ran on the mask to acquire graound truth for evaluating YOLOv8
 
 
