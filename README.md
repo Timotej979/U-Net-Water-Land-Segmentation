@@ -102,8 +102,8 @@ than 50 hours of footage while manually driving around the coastal areas. Since 
 
 <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats1.jpg" width="200" />
 <img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-stats2.jpg" width="200" />
-<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img1.jpg" width="200" />
-<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img2.jpg" width="200" />
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img1.png" width="200" />
+<img src="https://github.com/Timotej979/U-Net-Water-Land-Segmentation/blob/main/docs/assets/mastr-img2.png" width="200" />
 
 Figure 2: Statistics and image examples of the MaSTr1325 dataset [2]: (1) Size distribution of obstacles, (2) Average proportion of annotated pixels for each category, (3) and (4) Image examples of the dataset
 
