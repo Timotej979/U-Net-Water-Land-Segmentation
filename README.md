@@ -114,10 +114,12 @@ Following the well structured MaSTr1325 dataset is the MODD2 dataset [3] which w
 marine obstacle detection dataset for USV usage. The dataset is comprised of 28 videos of variable length spanning to 11675 stereo-frames at resolution of 1278x958 pixels each. These videos were captured within a time frame of approximately 15 months manually guiding the USV. Since this dataset is substantially bigger than the MaSTr1325
 dataset it offers an even greater variety of environmental and time-based factors as well as realistic navigation scenarios like driving near an obstacle and more presence of extreme situations like sudden changes of motion, sun glitter and reflections. This dataset is labeled using box detections of obstacles separated into two classes: small obstacles (light red) and large obstacles (cyan). On top of that this dataset also has the advantage of time-synchronized frames with measurements from the GPS, IMU and compass.
 
-![modd2-stats1](./docs/assets/modd2-stats1.png)
-![modd2-stats2](./docs/assets/modd2-stats2.png)
-![modd2-img1](./docs/assets/modd2-img1.png)
-![modd2-img2](./docs/assets/modd2-img2.png)
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <img src="./docs/assets/modd2-stats1.png" alt="Image 1" style="width: 48%;">
+    <img src="./docs/assets/modd2-stats2.png" alt="Image 2" style="width: 48%;">
+    <img src="./docs/assets/modd2-img1.png" alt="Image 3" style="width: 48%;">
+    <img src="./docs/assets/modd2-img2.png" alt="Image 4" style="width: 48%;">
+</div>
 
 Figure 3: Statistics of the MODD2 dataset [3]: (1) Size distribution of obstacles for RAW images, (2) Distribution of large (cyan) and small (light red) obstacles in each sequence for RAW images, (3) and (4) Image examples of the dataset
 
