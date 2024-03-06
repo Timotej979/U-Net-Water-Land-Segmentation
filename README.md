@@ -179,10 +179,12 @@ We used a dataset similar to the MaSTr1325 dataset [2] with the only difference 
 converted the WaSR masks in the RGB format to binarized masks in the gray-scale format. The original RGB images and gray-scale masks were then used as a basis for training
 the U-Net. We split the dataset using 80% of the images for training and 20% of images for testing. The training dataset was then split further using 50% for training and 50% for validation. This amounts to 836 images for training, 836 images for validation and 419 images for testing. Following this we arrived at the problem of generating labels for the YOLOv8 detection model. Since we already generated the gray-scale binarized masks for U-Net we reused them for executing simple contour detection on them. Since we know that the biggest contour detected on any mask would be the coastal and sky region we limited the contour search to only detect the contours of maximum area of 30% of the whole mask. This yielded good results after visual inspection and as such we proceeded with the extraction of box coordinates for each mask contour detection yielding the ground truth with which we can evaluate the performance of the YOLOv8 detection model. For the final dataset of testing the pre-trained YOLOv8 model we used all of the RGB images and the generated ground truth labels for evaluation of the detections.
 
-![rgb](./docs/assets/rgb.jpg)
-![wasr](./docs/assets/wasr.png)
-![mask](./docs/assets/mask.png)
-![object](./docs/assets/object.png)
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <img src="./docs/assets/rgb.jpg" alt="RGB Image" style="width: 48%;">
+    <img src="./docs/assets/wasr.png" alt="WASR Image" style="width: 48%;">
+    <img src="./docs/assets/mask.png" alt="Mask Image" style="width: 48%;">
+    <img src="./docs/assets/object.png" alt="Object Image" style="width: 48%;">
+</div>
 
 Figure 8: Image examples used in the dataset generation process: (1) RGB image, (2) Image segmented using the WaSR network, (3) Gray-scale binarized mask (4) Contour
 detection ran on the mask to acquire graound truth for evaluating YOLOv8
@@ -227,15 +229,19 @@ Figure 10: Intersection over union of U-Net per epoch
 
 We can see from the graphs that over the training period the loss for both training and validation data is decreasing and the IoU is increasing with logarithmic growth towards the ideal detection rate of 100%.
 
-![test-acc](./docs/assets/test-acc.png)
-![test-dice](./docs/assets/test-dice.png)
-![test-iou](./docs/assets/test-iou.png)
-![test-loss](./docs/assets/test-loss.png)
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <img src="./docs/assets/test-acc.png" alt="Test Accuracy" style="width: 48%;">
+    <img src="./docs/assets/test-dice.png" alt="Test Dice" style="width: 48%;">
+    <img src="./docs/assets/test-iou.png" alt="Test Intersection over Union (IoU)" style="width: 48%;">
+    <img src="./docs/assets/test-loss.png" alt="Test Loss" style="width: 48%;">
+</div>
 
 Figure 11: Interpolated progress of loss and performance measures of U-Net over the test dataset using three different best weights (Based on Pixel accuracy/Dice score/IoU)
 
-![yolov8-dice](./docs/assets/yolo-dice.png)
-![yolov8-iou](./docs/assets/yolo-iou.png)
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+    <img src="./docs/assets/yolo-dice.png" alt="YOLOv8 Dice" style="width: 48%;">
+    <img src="./docs/assets/yolo-iou.png" alt="YOLOv8 Intersection over Union (IoU)" style="width: 48%;">
+</div>
 
 Figure 12: Interpolated progress of performance meassures of YOLOv8 over the test dataset
 
