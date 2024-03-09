@@ -10,7 +10,6 @@ from torchvision.ops import box_iou
 
 # Default YOLOv8 imports
 from ultralytics import YOLO
-from ultralytics.utils.benchmarks import benchmark
 
 # Wandb imports
 import wandb
@@ -150,30 +149,59 @@ class ModelControler():
         self.initialize_new_run("YOLOv8-contour-model-test")
 
         # Define the dataset configuration
-        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+        test_images = self.opt.dataset_root + '/contour-det/images/test'
+        test_labels = self.opt.dataset_root + '/contour-det/labels/test'
 
         # Load the best YOLLOv8 model
         best_model = YOLO('/app/container/detection/U-Net-Water-Land-Segmentation/YOLOv8-contour-model-train/best.pt')
 
         # Benchmark the model
         if self.device == 'cpu':
-            results = benchmark(model=best_model,
-                                data=contour_ds,
-                                imgsz=self.opt.resize_prepared_size[0], 
-                                batch=-1, 
-                                device=self.device,
-                                project='U-Net-Water-Land-Segmentation',
-                                name='YOLOv8-contour-model-test')
+            results = model.predict(source=test_images,
+                                    imgsz=self.opt.resize_prepared_size[0], 
+                                    stream=True,
+                                    device=self.device)
         else:
-            results = benchmark(model=best_model,
-                                data=contour_ds,
+            results = model.predict(source=test_images,
                                 imgsz=self.opt.resize_prepared_size[0], 
-                                batch=-1, 
-                                device='0',
-                                project='U-Net-Water-Land-Segmentation',
-                                name='YOLOv8-contour-model-test')
+                                stream=True,
+                                device='0')
 
-        print(results)
+        # Initialize lists to store IoU and Dice score for each image
+        iou_list = []
+        dice_score_list = []
+        # Iterate over the results
+        for result in results:
+            # Get the ground truth path
+            image_filename = os.path.splitext(os.path.basename(result.path))[0]
+            # Set the label file path
+            label_file_path = os.path.join(test_labels, f'{image_filename}.txt')
+            # Check if the label file exists
+            if os.path.exists(label_file_path):
+                # Read ground truth bounding box coordinates from the label file
+                with open(label_file_path, 'r') as label_file:
+                    ground_truth = [list(map(float, line.split())) for line in label_file.readlines()]
+                
+                # Get the predicted bounding box coordinates and confidence scores
+                pred_boxes = result.boxes.numpy()  # Convert to numpy array
+                # Compare the prediction with the ground truth
+                evaluation_results = ModelControler.compare_predictions(pred_boxes, ground_truth)
+
+                # Append IoU and Dice score to the lists
+                iou_list.append(evaluation_results['test/image_iou'])
+                dice_score_list.append(evaluation_results['test/image_dice_score'])
+                # Log the evaluation results
+                wandb.log(evaluation_results)
+            # If the label file does not exist set the IoU and Dice score to the worst possible value
+            else: 
+                iou_list.append(0.0)
+                dice_score_list.append(0.0)
+
+        # Calculate mean IoU and mean Dice score
+        mean_iou = sum(iou_list) / len(iou_list) if len(iou_list) > 0 else 0.0
+        mean_dice_score = sum(dice_score_list) / len(dice_score_list) if len(dice_score_list) > 0 else 0.0
+        # Log mean IoU and mean Dice score
+        wandb.log({'test/mean_iou': mean_iou, 'test/mean_dice_score': mean_dice_score})
 
         # Stop wandb logging
         wandb.finish()
@@ -210,9 +238,15 @@ class ModelControler():
             exit(1)
         # Validate the model
         if self.device == 'cpu':
-            results = model.predict(source=test_images, stream=True, device=self.device)
+            results = model.predict(source=test_images, 
+                                    imgsz=self.opt.resize_prepared_size[0],
+                                    stream=True, 
+                                    device=self.device)
         else:
-            results = model.predict(source=test_images, stream=True, device='0')
+            results = model.predict(source=test_images, 
+                                    imgsz=self.opt.resize_prepared_size[0],
+                                    stream=True, 
+                                    device='0')
 
         # Initialize lists to store IoU and Dice score for each image
         iou_list = []

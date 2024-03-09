@@ -2,11 +2,13 @@
 # Source: https://github.com/cnstark/pytorch-docker
 
 # Available tags:
-#  - 1.7.0-py3.8.13-cuda11.0.3-ubuntu18.04
-#  - 1.7.0-py3.8.13-cuda11.0.3-devel-ubuntu18.04
-#  - 1.7.0-py3.8.13-ubuntu18.04
+#  - 2.0.1-py3.10.11-cuda11.8.0-ubuntu22.04
+#  - 2.0.1-py3.9.17-cuda11.8.0-ubuntu20.04
+#  - 2.0.1-py3.9.17-cuda11.8.0-devel-ubuntu20.04
+#  - 2.0.1-py3.10.11-ubuntu22.04
+#  - 2.0.1-py3.9.17-ubuntu20.04
 
-FROM cnstark/pytorch:1.7.0-py3.8.13-ubuntu18.04
+FROM cnstark/pytorch:2.0.1-py3.10.11-ubuntu22.04
 
 # Set the timezone non-interactively, othherwise tzdata will ask for input
 ARG TZ=UTC
