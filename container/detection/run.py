@@ -10,6 +10,7 @@ from torchvision.ops import box_iou
 
 # Default YOLOv8 imports
 from ultralytics import YOLO
+from ultralytics.utils.benchmarks import benchmark
 
 # Wandb imports
 import wandb
@@ -94,9 +95,26 @@ class ModelControler():
 
         # Train the model
         if self.device == 'cpu':
-            model.train(data=contour_ds, imgsz=self.opt.resize_prepared_size[0], epochs=self.opt.epochs, batch=-1, device=self.device)
+            results = model.train(data=contour_ds, 
+                                  imgsz=self.opt.resize_prepared_size[0],
+                                  plots=True, 
+                                  epochs=self.opt.epochs,
+                                  batch=-1,
+                                  device=self.device,
+                                  project='U-Net-Water-Land-Segmentation',
+                                  name='YOLOv8-contour-model-train')
         else:
-            model.train(data=contour_ds, imgsz=self.opt.resize_prepared_size[0], epochs=self.opt.epochs, batch=-1, device='0')
+            results = model.train(data=contour_ds,
+                                  imgsz=self.opt.resize_prepared_size[0],
+                                  plots=True,
+                                  epochs=self.opt.epochs,
+                                  batch=-1, 
+                                  device='0',
+                                  project='U-Net-Water-Land-Segmentation',
+                                  name='YOLOv8-contour-model-train')
+
+        print(results)
+
         # Stop wandb logging
         wandb.finish()
 
@@ -105,9 +123,21 @@ class ModelControler():
 
         # Validate the model
         if self.device == 'cpu':
-            metrics = model.val(data=contour_ds, batch=-1, device=self.device)
+            metrics = model.val(data=contour_ds, 
+                                imgsz=self.opt.resize_prepared_size[0], 
+                                plots=True,
+                                batch=-1, 
+                                device=self.device,
+                                project='U-Net-Water-Land-Segmentation',
+                                name='YOLOv8-contour-model-val')
         else:
-            metrics = model.val(data=contour_ds, batch=-1, device='0')
+            metrics = model.val(data=contour_ds, 
+                                imgsz=self.opt.resize_prepared_size[0], 
+                                plots=True,
+                                batch=-1, 
+                                device='0', 
+                                project='U-Net-Water-Land-Segmentation',
+                                name='YOLOv8-contour-model-val')
 
         print(metrics)
 
@@ -116,8 +146,38 @@ class ModelControler():
 
 
     def test_contour(self):
-        # TODO
-        pass
+        # Initialize a new run
+        self.initialize_new_run("YOLOv8-contour-model-test")
+
+        # Define the dataset configuration
+        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+
+        # Load the best YOLLOv8 model
+        best_model = YOLO('/app/container/detection/U-Net-Water-Land-Segmentation/YOLOv8-contour-model-train/best.pt')
+
+        # Benchmark the model
+        if self.device == 'cpu':
+            results = benchmark(model=best_model,
+                                data=contour_ds,
+                                imgsz=self.opt.resize_prepared_size[0], 
+                                batch=-1, 
+                                device=self.device,
+                                project='U-Net-Water-Land-Segmentation',
+                                name='YOLOv8-contour-model-test')
+        else:
+            results = benchmark(model=best_model,
+                                data=contour_ds,
+                                imgsz=self.opt.resize_prepared_size[0], 
+                                batch=-1, 
+                                device='0',
+                                project='U-Net-Water-Land-Segmentation',
+                                name='YOLOv8-contour-model-test')
+
+        print(results)
+
+        # Stop wandb logging
+        wandb.finish()
+
 
     def train_val_autodistil(self):
         #TODO
@@ -293,7 +353,7 @@ if __name__ == "__main__":
     options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Path to the dataset root folder')
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--epochs', type=int, default=5, help='Number of training epochs')
+    options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
     opt = options.parse_args()
 
     # Model controler initialization
@@ -310,23 +370,25 @@ if __name__ == "__main__":
         model_controler.autolabel_dataset()
 
     # Train the model and generate the weights
-    if opt.train_method == 'contours':
-        print("Training the detection model using contours...")
-        model_controler.train_val_contour()
+    if opt.train == True:
+        if opt.train_method == 'contours':
+            print("Training the detection model using contours...")
+            model_controler.train_val_contour()
 
-    if opt.train_method == 'autodistil':
-        print("Training the detection model using autodistil...")
-        model_controler.train_val_autodistil()
+        if opt.train_method == 'autodistil':
+            print("Training the detection model using autodistil...")
+            model_controler.train_val_autodistil()
 
     # Test the model and evaluate it
-    if opt.test_method == 'pretrained':
-        print("Testing the pretrained detection model...")
-        model_controler.test_pretrained()
+    if opt.test == True:
+        if opt.test_method == 'pretrained':
+            print("Testing the pretrained detection model...")
+            model_controler.test_pretrained()
 
-    if opt.test_method == 'contours':
-        print("Testing the contour trained detection model...")
-        model_controler.test_contour()
+        if opt.test_method == 'contours':
+            print("Testing the contour trained detection model...")
+            model_controler.test_contour()
 
-    if opt.test_method == 'autodistil':
-        print("Testing the autodistil trained detection model...")
-        model_controler.test_autodistil()
+        if opt.test_method == 'autodistil':
+            print("Testing the autodistil trained detection model...")
+            model_controler.test_autodistil()
