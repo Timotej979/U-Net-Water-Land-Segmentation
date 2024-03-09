@@ -42,6 +42,9 @@ class ModelControler():
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
 
+        # Print pytorch version
+        print(f"PyTorch version: {torch.__version__}")
+
     # Function to initialize a new run
     def initialize_new_run(self, name):
         wandb.init(project="U-Net-Water-Land-Segmentation", name=name)
@@ -91,12 +94,9 @@ class ModelControler():
 
         # Train the model
         if self.device == 'cpu':
-            results = model.train(data=contour_ds, epochs=self.opt.epochs, batch=-1, device=self.device)
+            model.train(data=contour_ds, imgsz=self.opt.resize_prepared_size[0], epochs=self.opt.epochs, batch=-1, device=self.device)
         else:
-            results = model.train(data=contour_ds, epochs=self.opt.epochs, batch=-1, device=0)
-        
-        print(results)
-
+            model.train(data=contour_ds, imgsz=self.opt.resize_prepared_size[0], epochs=self.opt.epochs, batch=-1, device='0')
         # Stop wandb logging
         wandb.finish()
 
@@ -293,7 +293,7 @@ if __name__ == "__main__":
     options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Path to the dataset root folder')
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
+    options.add_argument('--epochs', type=int, default=5, help='Number of training epochs')
     opt = options.parse_args()
 
     # Model controler initialization

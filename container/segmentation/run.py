@@ -51,6 +51,9 @@ class ModelControler():
         # Define the transformations
         self.define_transformations()
 
+        # Print pytorch version
+        print(f"PyTorch version: {torch.__version__}")
+
     # Function to calculate the intersection over union of the model
     @staticmethod
     def calculate_iou_f1(predictions, masks):
