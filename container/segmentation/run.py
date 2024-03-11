@@ -78,7 +78,7 @@ class ModelControler():
 
     # Function to initialize a new run
     def initialize_new_run(self, name):
-        wandb.init(project="U-Net-Water-Land-Segmentation", name=name, config={ # Model configuration
+        wandb.init(project="U-Net-Water-Land-Segmentation", name=name, tags=["UNet"], config={ # Model configuration
                                                                                 "hidden_layer_sizes": [64, 128, 256, 512, 1024],
                                                                                 "kernel_sizes": [3, 3, 3, 3, 3],
                                                                                 "activation": "ReLU",

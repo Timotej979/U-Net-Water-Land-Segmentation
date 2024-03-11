@@ -47,7 +47,7 @@ class ModelControler():
 
     # Function to initialize a new run
     def initialize_new_run(self, name):
-        wandb.init(project="U-Net-Water-Land-Segmentation", name=name)
+        wandb.init(project="U-Net-Water-Land-Segmentation", name=name, tags=["YOLOv8"])
 
     # Function to prepare the dataset folder
     def prepare_dataset_folder(self):
@@ -71,48 +71,54 @@ class ModelControler():
             print("Invalid autolabeling method")
             exit(1)
 
+    # Function to train and validate the YOLOv8 model using the contour dataset
     def train_val_contour(self):
         # Initialize a new run
         self.initialize_new_run("YOLOv8-contour-model-train")
 
         # Define the dataset configuration
         contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+
         # Load the YOLOv8 model depending on the size
         if self.opt.model_size == 'n':
-            model = YOLO('/app/container/detection/weights/yolov8n.pt')
+            train_model = YOLO('/app/container/detection/weights/yolov8n.pt')
         elif self.opt.model_size == 's':
-            model = YOLO('/app/container/detection/weights/yolov8s.pt')
+            train_model = YOLO('/app/container/detection/weights/yolov8s.pt')
         elif self.opt.model_size == 'm':
-            model = YOLO('/app/container/detection/weights/yolov8m.pt')
+            train_model = YOLO('/app/container/detection/weights/yolov8m.pt')
         elif self.opt.model_size == 'l':
-            model = YOLO('/app/container/detection/weights/yolov8l.pt')
+            train_model = YOLO('/app/container/detection/weights/yolov8l.pt')
         elif self.opt.model_size == 'x':
-            model = YOLO('/app/container/detection/weights/yolov8x.pt')
+            train_model = YOLO('/app/container/detection/weights/yolov8x.pt')
         else:
             print("Invalid model size")
             exit(1)
 
         # Train the model
         if self.device == 'cpu':
-            results = model.train(data=contour_ds, 
-                                  imgsz=self.opt.resize_prepared_size[0],
-                                  plots=True, 
-                                  epochs=self.opt.epochs,
-                                  batch=-1,
-                                  device=self.device,
-                                  project='U-Net-Water-Land-Segmentation',
-                                  name='YOLOv8-contour-model-train')
+            results = train_model.train(data=contour_ds, 
+                                        imgsz=self.opt.resize_prepared_size,
+                                        plots=True, 
+                                        epochs=self.opt.epochs,
+                                        batch=-1,
+                                        device=self.device,
+                                        exist_ok=True,
+                                        name='YOLOv8-contour-model-train')
         else:
-            results = model.train(data=contour_ds,
-                                  imgsz=self.opt.resize_prepared_size[0],
-                                  plots=True,
-                                  epochs=self.opt.epochs,
-                                  batch=-1, 
-                                  device='0',
-                                  project='U-Net-Water-Land-Segmentation',
-                                  name='YOLOv8-contour-model-train')
+            results = train_model.train(data=contour_ds,
+                                        imgsz=self.opt.resize_prepared_size,
+                                        plots=True,
+                                        epochs=self.opt.epochs,
+                                        batch=-1, 
+                                        device='0',
+                                        exist_ok=True,
+                                        name='YOLOv8-contour-model-train')
 
+        metrics = train_model.val()
+
+        # Print the training results
         print(results)
+        print(f"Validation metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
 
         # Stop wandb logging
         wandb.finish()
@@ -120,104 +126,82 @@ class ModelControler():
         # Initialize a new run
         self.initialize_new_run("YOLOv8-contour-model-val")
 
+        # Load the trained model
+        val_model = YOLO('/app/container/runs/detect/YOLOv8-contour-model-train/weights/best.pt')
+
         # Validate the model
         if self.device == 'cpu':
-            metrics = model.val(data=contour_ds, 
-                                imgsz=self.opt.resize_prepared_size[0], 
-                                plots=True,
-                                batch=-1, 
-                                device=self.device,
-                                project='U-Net-Water-Land-Segmentation',
-                                name='YOLOv8-contour-model-val')
+            metrics = val_model.val(data=contour_ds, 
+                                    imgsz=self.opt.resize_prepared_size,
+                                    plots=True,
+                                    device=self.device,
+                                    exist_ok=True,
+                                    name='YOLOv8-contour-model-val')
         else:
-            metrics = model.val(data=contour_ds, 
-                                imgsz=self.opt.resize_prepared_size[0], 
-                                plots=True,
-                                batch=-1, 
-                                device='0', 
-                                project='U-Net-Water-Land-Segmentation',
-                                name='YOLOv8-contour-model-val')
+            metrics = val_model.val(data=contour_ds, 
+                                    imgsz=self.opt.resize_prepared_size,
+                                    plots=True, 
+                                    device='0',
+                                    exist_ok=True,
+                                    name='YOLOv8-contour-model-val')
 
-        print(metrics)
+        # Print the validation metrics
+        print(f"Validation metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
 
         # Stop wandb logging 
         wandb.finish()
 
 
+    # Function to test the YOLOv8 model using the contour dataset
     def test_contour(self):
         # Initialize a new run
         self.initialize_new_run("YOLOv8-contour-model-test")
 
         # Define the dataset configuration
-        test_images = self.opt.dataset_root + '/contour-det/images/test'
-        test_labels = self.opt.dataset_root + '/contour-det/labels/test'
+        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
 
         # Load the best YOLLOv8 model
-        best_model = YOLO('/app/container/detection/U-Net-Water-Land-Segmentation/YOLOv8-contour-model-train/best.pt')
+        test_model = YOLO('/app/container/runs/detect/YOLOv8-contour-model-train/weights/best.pt')
 
         # Benchmark the model
         if self.device == 'cpu':
-            results = model.predict(source=test_images,
-                                    imgsz=self.opt.resize_prepared_size[0], 
-                                    stream=True,
-                                    device=self.device)
+            metrics = test_model.val(data=contour_ds,
+                                     imgsz=self.opt.resize_prepared_size, 
+                                     plots=True,
+                                     device=self.device,
+                                     exist_ok=True,
+                                     name='YOLOv8-contour-model-test')
         else:
-            results = model.predict(source=test_images,
-                                imgsz=self.opt.resize_prepared_size[0], 
-                                stream=True,
-                                device='0')
+            metrics = test_model.predict(source=test_images,
+                                         imgsz=self.opt.resize_prepared_size, 
+                                         plots=True,
+                                         device='0',
+                                         exist_ok=True,
+                                         name='YOLOv8-contour-model-test')
 
-        # Initialize lists to store IoU and Dice score for each image
-        iou_list = []
-        dice_score_list = []
-        # Iterate over the results
-        for result in results:
-            # Get the ground truth path
-            image_filename = os.path.splitext(os.path.basename(result.path))[0]
-            # Set the label file path
-            label_file_path = os.path.join(test_labels, f'{image_filename}.txt')
-            # Check if the label file exists
-            if os.path.exists(label_file_path):
-                # Read ground truth bounding box coordinates from the label file
-                with open(label_file_path, 'r') as label_file:
-                    ground_truth = [list(map(float, line.split())) for line in label_file.readlines()]
-                
-                # Get the predicted bounding box coordinates and confidence scores
-                pred_boxes = result.boxes.numpy()  # Convert to numpy array
-                # Compare the prediction with the ground truth
-                evaluation_results = ModelControler.compare_predictions(pred_boxes, ground_truth)
-
-                # Append IoU and Dice score to the lists
-                iou_list.append(evaluation_results['test/image_iou'])
-                dice_score_list.append(evaluation_results['test/image_dice_score'])
-                # Log the evaluation results
-                wandb.log(evaluation_results)
-            # If the label file does not exist set the IoU and Dice score to the worst possible value
-            else: 
-                iou_list.append(0.0)
-                dice_score_list.append(0.0)
-
-        # Calculate mean IoU and mean Dice score
-        mean_iou = sum(iou_list) / len(iou_list) if len(iou_list) > 0 else 0.0
-        mean_dice_score = sum(dice_score_list) / len(dice_score_list) if len(dice_score_list) > 0 else 0.0
-        # Log mean IoU and mean Dice score
-        wandb.log({'test/mean_iou': mean_iou, 'test/mean_dice_score': mean_dice_score})
+        # Print the test metrics
+        print(f"Test metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
 
         # Stop wandb logging
         wandb.finish()
 
 
+    # Function to train and validate the YOLOv8 model using the autodistil dataset
     def train_val_autodistil(self):
         #TODO
         pass
 
+    
+    # Function to test the YOLOv8 model using the autodistil dataset
     def test_autodistil(self):
         #TODO
         pass
 
+
+    # Function to test the YOLOv8 model using the pretrained weights
     def test_pretrained(self):
         # Initialize a new run
-        self.initialize_new_run("YOLOv8-pretrained-model-test")
+        test_run = self.initialize_new_run("YOLOv8-pretrained-model-test")
         
         # Define the test data paths
         test_images = self.opt.dataset_root + '/raw-det/images'
@@ -239,12 +223,12 @@ class ModelControler():
         # Validate the model
         if self.device == 'cpu':
             results = model.predict(source=test_images, 
-                                    imgsz=self.opt.resize_prepared_size[0],
+                                    imgsz=self.opt.resize_prepared_size,
                                     stream=True, 
                                     device=self.device)
         else:
             results = model.predict(source=test_images, 
-                                    imgsz=self.opt.resize_prepared_size[0],
+                                    imgsz=self.opt.resize_prepared_size,
                                     stream=True, 
                                     device='0')
 
@@ -387,7 +371,7 @@ if __name__ == "__main__":
     options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Path to the dataset root folder')
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
+    options.add_argument('--epochs', type=int, default=2, help='Number of training epochs')
     opt = options.parse_args()
 
     # Model controler initialization

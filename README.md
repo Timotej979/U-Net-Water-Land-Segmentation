@@ -57,6 +57,20 @@ python3 /app/container/detection/run.py --test --test-method pretrained
 
 Before running the code you might need to download the default YOLOv8 weights and place them in the **container/detection/weights** folder for the run script of the detection script to read and use them.
 
+To run the complete project on the CPU/GPU you can use the following two commands from the root of the project:
+
+**CPU run:**
+```bash
+./run.sh cpu
+```
+
+**GPU run:**
+```bash
+./run.sh gpu
+```
+
+Not specifying an argument to the **./run.sh** script will display the help for this command.
+
 
 ## Project structure
 

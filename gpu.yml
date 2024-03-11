@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # Service for running the segmentation detection models: UNet and YOLOv8
+  unet_yolo_container:
+    build:
+      context: ./container
+      dockerfile: Dockerfile-gpu
+
+    volumes:
+      - ./container:/app/container
+
+    environment:
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - WANDB_ENTITY=${WANDB_ENTITY}
+      
+    command: ["bash", "-c", "cd /app/container && chmod +x runSegDet.sh && ./runSegDet.sh"]
+
+    # Comment/uncomment for GPU usage in container
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

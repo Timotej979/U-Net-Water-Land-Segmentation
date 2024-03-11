@@ -5,6 +5,7 @@ services:
   unet_yolo_container:
     build:
       context: ./container
+      dockerfile: Dockerfile-cpu
 
     volumes:
       - ./container:/app/container
