@@ -1,4 +1,5 @@
 import os
+import time
 import argparse
 
 # Numpy imports
@@ -10,6 +11,7 @@ from torchvision.ops import box_iou
 
 # Default YOLOv8 imports
 from ultralytics import YOLO
+from ultralytics.utils.benchmarks import benchmark
 
 # Wandb imports
 import wandb
@@ -73,22 +75,29 @@ class ModelControler():
 
     # Function to train and validate the YOLOv8 model using the contour dataset
     def train_val_contour(self):
-        # Initialize a new run
-        self.initialize_new_run("YOLOv8-contour-model-train")
-
         # Define the dataset configuration
         contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
 
-        # Load the YOLOv8 model depending on the size
+        # Initialize a new run and load the YOLOv8 model depending on the size 
         if self.opt.model_size == 'n':
+            model_name = 'YOLOv8n-contour-train-val'
+            self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8n.pt')
         elif self.opt.model_size == 's':
+            model_name = 'YOLOv8s-contour-train-val'
+            self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8s.pt')
         elif self.opt.model_size == 'm':
+            model_name = 'YOLOv8m-contour-train-val'
+            self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8m.pt')
         elif self.opt.model_size == 'l':
+            model_name = 'YOLOv8l-contour-train-val'
+            self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8l.pt')
         elif self.opt.model_size == 'x':
+            model_name = 'YOLOv8x-contour-train-val'
+            self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8x.pt')
         else:
             print("Invalid model size")
@@ -97,90 +106,105 @@ class ModelControler():
         # Train the model
         if self.device == 'cpu':
             results = train_model.train(data=contour_ds, 
-                                        imgsz=self.opt.resize_prepared_size,
+                                        imgsz=self.opt.resize_prepared_size[0],
                                         plots=True, 
                                         epochs=self.opt.epochs,
                                         batch=-1,
                                         device=self.device,
                                         exist_ok=True,
-                                        name='YOLOv8-contour-model-train')
+                                        project='detection',
+                                        name=model_name,
+                                        profile=True)
         else:
             results = train_model.train(data=contour_ds,
-                                        imgsz=self.opt.resize_prepared_size,
+                                        imgsz=self.opt.resize_prepared_size[0],
                                         plots=True,
                                         epochs=self.opt.epochs,
                                         batch=-1, 
                                         device='0',
                                         exist_ok=True,
-                                        name='YOLOv8-contour-model-train')
-
-        metrics = train_model.val()
-
-        # Print the training results
-        print(results)
-        print(f"Validation metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
+                                        project='detection',
+                                        name=model_name,
+                                        profile=True)
 
         # Stop wandb logging
-        wandb.finish()
-
-        # Initialize a new run
-        self.initialize_new_run("YOLOv8-contour-model-val")
-
-        # Load the trained model
-        val_model = YOLO('/app/container/runs/detect/YOLOv8-contour-model-train/weights/best.pt')
-
-        # Validate the model
-        if self.device == 'cpu':
-            metrics = val_model.val(data=contour_ds, 
-                                    imgsz=self.opt.resize_prepared_size,
-                                    plots=True,
-                                    device=self.device,
-                                    exist_ok=True,
-                                    name='YOLOv8-contour-model-val')
-        else:
-            metrics = val_model.val(data=contour_ds, 
-                                    imgsz=self.opt.resize_prepared_size,
-                                    plots=True, 
-                                    device='0',
-                                    exist_ok=True,
-                                    name='YOLOv8-contour-model-val')
-
-        # Print the validation metrics
-        print(f"Validation metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
-
-        # Stop wandb logging 
         wandb.finish()
 
 
     # Function to test the YOLOv8 model using the contour dataset
     def test_contour(self):
+        # Find out latest run folder
+        directory_path = '/app/container/detection'
+        directories = [os.path.join(directory_path, d) for d in os.listdir(directory_path) if 'YOLOv8' in d and 'train-val' in d]
+        latest_train_run = max(directories, key=os.path.getctime)
+
+        print(latest_train_run)
+
+        # Define the name of this run from latest run
+        test_run_name = latest_train_run.split('/')[-1].replace('train-val', 'test')
+
         # Initialize a new run
-        self.initialize_new_run("YOLOv8-contour-model-test")
+        self.initialize_new_run(test_run_name)
 
         # Define the dataset configuration
         contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
 
-        # Load the best YOLLOv8 model
-        test_model = YOLO('/app/container/runs/detect/YOLOv8-contour-model-train/weights/best.pt')
+        # Load the best YOLOv8 model
+        test_model = YOLO(os.path.join(latest_train_run + '/weights/best.pt'))
 
         # Benchmark the model
         if self.device == 'cpu':
             metrics = test_model.val(data=contour_ds,
-                                     imgsz=self.opt.resize_prepared_size, 
-                                     plots=True,
+                                     imgsz=self.opt.resize_prepared_size[0],
                                      device=self.device,
+                                     split='test',
                                      exist_ok=True,
-                                     name='YOLOv8-contour-model-test')
+                                     project='detection',
+                                     name=test_run_name,
+                                     plots=True,
+                                     save_json=True)
         else:
-            metrics = test_model.predict(source=test_images,
-                                         imgsz=self.opt.resize_prepared_size, 
-                                         plots=True,
-                                         device='0',
-                                         exist_ok=True,
-                                         name='YOLOv8-contour-model-test')
+            metrics = test_model.val(data=contour_ds,
+                                     imgsz=self.opt.resize_prepared_size[0],
+                                     device='0',
+                                     split='test',
+                                     exist_ok=True,
+                                     project='detection',
+                                     name=test_run_name,
+                                     plots=True,
+                                     save_json=True)
 
         # Print the test metrics
-        print(f"Test metrics:\n    mAP@50: {metrics.box.map50}\n    mAP@75: {metrics.box.map75}\n    mAP@50-95: {metrics.box.map}\n    Precision: {metrics.box.mp}\n    Recall: {metrics.box.mr}")
+        print(f"Testing metrics:\n    mAP50-95: {metrics.box.map}\n    mAP50: {metrics.box.map50}\n    mAP75: {metrics.box.map75}")
+
+        # Log the media images and sort them into the correct categories
+        media_files = [os.path.join(directory_path, test_run_name, img) for img in os.listdir(os.path.join(directory_path, test_run_name)) if img.endswith('.png') or img.endswith('.jpg')]
+        media_files.sort()
+        for media_file in media_files:
+            if 'confusion_matrix_normalized' in media_file:
+                wandb.log({"Normalized confusion matrix.png": wandb.Image(media_file)})
+            elif 'confusion_matrix.png' in media_file:
+                wandb.log({"Confusion matrix": wandb.Image(media_file)})
+            elif 'PR_curve.png' in media_file:
+                wandb.log({"PR Curve": wandb.Image(media_file)})
+            elif 'P_curve.png' in media_file:
+                wandb.log({"P Curve": wandb.Image(media_file)})
+            elif 'R_curve.png' in media_file:
+                wandb.log({"R Curve": wandb.Image(media_file)})
+            elif 'F1_curve.png' in media_file:
+                wandb.log({"F1 Curve": wandb.Image(media_file)})
+            elif 'pred' in media_file:
+                wandb.log({"Predictions": wandb.Image(media_file)})
+            elif 'labels' in media_file:
+                wandb.log({"Labels": wandb.Image(media_file)})
+            else:
+                pass
+
+        # Log the test metrics
+        wandb.log(metrics.results_dict)
+
+        # Log the speed of inference
+        wandb.log(metrics.speed)
 
         # Stop wandb logging
         wandb.finish()
@@ -220,6 +244,7 @@ class ModelControler():
         else:
             print("Invalid model size")
             exit(1)
+
         # Validate the model
         if self.device == 'cpu':
             results = model.predict(source=test_images, 
@@ -357,7 +382,7 @@ if __name__ == "__main__":
     options.add_argument('--prepare', action='store_true', help='Prepare the dataset')
     options.add_argument('--resize-prepared', action='store_true', help='Resize the images and masks')
     options.add_argument('--resize-prepared-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio')
-    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,512), help='Size of the image (height, width)')
     # Autolabeling control
     options.add_argument('--autolabel', action='store_true', help='Autolabel the dataset')
     options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: rawcontours/autodistil')
@@ -371,7 +396,7 @@ if __name__ == "__main__":
     options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Path to the dataset root folder')
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--epochs', type=int, default=2, help='Number of training epochs')
+    options.add_argument('--epochs', type=int, default=700, help='Number of training epochs')
     opt = options.parse_args()
 
     # Model controler initialization

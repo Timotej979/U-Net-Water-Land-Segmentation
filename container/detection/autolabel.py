@@ -131,32 +131,25 @@ class AutoLabeling():
 
     # Label the ground truth using autodistil
     def label_autodistil(self):
-        # Initialize the caption ontology and assign a single class to all the objects
-        ontology=CaptionOntology({
-            "boat": "obstacle",
-            "canoe": "obstacle",
-            "kayak": "obstacle",
-            "paddle": "obstacle",
-            "sailboat": "obstacle",
-            "ship": "obstacle",
-            "yacht": "obstacle",
-        })
-
         # Initialize the base model
-        base_model = GroundedSAM(ontology=ontology)
+        base_model = GroundedSAM(onthology = CaptionOntology({"boat": "obstacle",
+                                                            "canoe": "obstacle",
+                                                            "kayak": "obstacle",
+                                                            "paddle": "obstacle",
+                                                            "sailboat": "obstacle",
+                                                            "ship": "obstacle",
+                                                            "yacht": "obstacle",
+                                                            }))
+
+        # Make the labeled directory
+        os.makedirs(os.path.join(self.root, "autodistil-det-labeled"), exist_ok=True)
 
         # Label the images in the train, validation and test sets
-        folders_to_annotate = [
-            os.path.join(self.root, 'autodistil-det', 'images', 'train'),
-            os.path.join(self.root, 'autodistil-det', 'images', 'val'),
-            os.path.join(self.root, 'autodistil-det', 'images', 'test')
-        ]
-        for folder in folders_to_annotate:
-            dataset = base_model.label(
-                input_folder=folder,
-                extension=".jpg",
-                output_folder=folder.replace("images", "labels"),
-            )
+        dataset = base_model.label(
+            input_folder=os.path.join(self.root, "autodistil-det", "images"),
+            extension=".jpg",
+            output_folder=os.path.join(self.root, "autodistil-det-labeled")
+        )
 
         print("Autodistil labeling done")
 
