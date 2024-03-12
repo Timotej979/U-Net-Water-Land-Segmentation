@@ -2,6 +2,7 @@
 *.pth
 **/__pycache__/
 **/wandb/
-**/weights/
 **/runs/
 *.cache
+*.pt
+*.onnx

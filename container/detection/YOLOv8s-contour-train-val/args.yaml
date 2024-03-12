@@ -2,7 +2,7 @@ task: detect
 mode: train
 model: /app/container/detection/weights/yolov8s.pt
 data: /app/container/dataset/contour-det/config.yaml
-epochs: 1
+epochs: 700
 time: null
 patience: 100
 batch: -1
