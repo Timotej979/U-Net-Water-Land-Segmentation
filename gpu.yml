@@ -17,6 +17,7 @@ services:
     command: ["bash", "-c", "cd /app/container && chmod +x runSegDet.sh && ./runSegDet.sh"]
 
     # Comment/uncomment for GPU usage in container
+    shm_size: 16gb
     deploy:
       resources:
         reservations:
