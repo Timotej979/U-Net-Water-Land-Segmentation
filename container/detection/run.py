@@ -394,7 +394,7 @@ if __name__ == "__main__":
     options.add_argument('--dataset-root', type=str, default='/app/container/dataset', help='Path to the dataset root folder')
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
-    options.add_argument('--epochs', type=int, default=700, help='Number of training epochs')
+    options.add_argument('--epochs', type=int, default=1500, help='Number of training epochs')
     opt = options.parse_args()
 
     # Model controler initialization
