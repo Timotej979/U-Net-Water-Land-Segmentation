@@ -113,8 +113,7 @@ class ModelControler():
                                         device=self.device,
                                         exist_ok=True,
                                         project='detection',
-                                        name=model_name,
-                                        profile=True)
+                                        name=model_name)
         else:
             results = train_model.train(data=contour_ds,
                                         imgsz=self.opt.resize_prepared_size[0],
@@ -124,8 +123,7 @@ class ModelControler():
                                         device='0',
                                         exist_ok=True,
                                         project='detection',
-                                        name=model_name,
-                                        profile=True)
+                                        name=model_name)
 
         # Stop wandb logging
         wandb.finish()
