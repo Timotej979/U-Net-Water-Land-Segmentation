@@ -1,0 +1,5 @@
+train: /app/container/dataset/contour-rgb-det/images/train
+val: /app/container/dataset/contour-rgb-det/images/val
+test: /app/container/dataset/contour-rgb-det/images/test
+nc: 1
+names: ['obstacle']

@@ -1,0 +1,11 @@
+names:
+- obstacle
+- obstacle
+- obstacle
+- obstacle
+- obstacle
+- obstacle
+- obstacle
+nc: 7
+train: /app/container/dataset/autodistil-label-det/train/images
+val: /app/container/dataset/autodistil-label-det/valid/images

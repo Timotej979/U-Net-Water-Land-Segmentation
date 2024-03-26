@@ -419,7 +419,7 @@ if __name__ == "__main__":
     options.add_argument('--prepare', action='store_true', help='Prepare the dataset.')
     options.add_argument('--resize-prepared', action='store_true', help='Resize the images and masks.')
     options.add_argument('--resize-prepared-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio.')
-    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(640,640), help='Size of the image (height, width)')
     # Model control
     options.add_argument('--train', action='store_true', help='Train the model.')
     options.add_argument('--best-weights', type=str, default='IoU', help='Which weights to use for testing the model: "IoU", "Dice" or "Pixel_Accuracy')
@@ -429,7 +429,7 @@ if __name__ == "__main__":
     options.add_argument('--train-test-ratio', type=float, default=0.8, help='Ratio of the dataset to be used for training')
     options.add_argument('--train-val-ratio', type=float, default=0.5, help='Ratio of the training dataset to be used for validation')
     options.add_argument('--batch-size', type=int, default=4, help='Batch size')
-    options.add_argument('--image-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,384), help='Size of the image (height, width)')
+    options.add_argument('--image-size', type=lambda x: tuple(map(int, x.split(','))), default=(640,640), help='Size of the image (height, width)')
     options.add_argument('--epochs', type=int, default=150, help='Number of training epochs')
     opt = options.parse_args()
 

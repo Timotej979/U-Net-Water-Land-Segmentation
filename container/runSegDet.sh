@@ -4,9 +4,9 @@
 printenv | grep WANDB
 
 # Prepare the sub-datasets for segmentation and detection
-#python3 /app/container/segmentation/run.py --prepare --resize-prepared --resize-prepared-size 512,384
-#python3 /app/container/detection/run.py --prepare --resize-prepared --resize-prepared-size 512,384 --autolabel --autolabel-method rawcontours
-#python3 /app/container/detection/run.py --prepare --resize-prepared --resize-prepared-size 512,384 --autolabel --autolabel-method autodistil
+python3 /app/container/segmentation/run.py --prepare
+python3 /app/container/detection/run.py --prepare --autolabel --autolabel-method rawcontours
+python3 /app/container/detection/run.py --prepare --autolabel --autolabel-method autodistil
 
 # Run segmentation
 ## Training
@@ -20,20 +20,20 @@ printenv | grep WANDB
 
 ## Train test loops for contour based detection
 ### Nano size
-python3 /app/container/detection/run.py --model-size n --train --train-method contours
-python3 /app/container/detection/run.py --model-size n --test --test-method contours
+#python3 /app/container/detection/run.py --model-size n --train --train-method contours
+#python3 /app/container/detection/run.py --model-size n --test --test-method contours
 ### Small size
-python3 /app/container/detection/run.py --model-size s --train --train-method contours
-python3 /app/container/detection/run.py --model-size s --test --test-method contours
+#python3 /app/container/detection/run.py --model-size s --train --train-method contours
+#python3 /app/container/detection/run.py --model-size s --test --test-method contours
 ### Medium size
-python3 /app/container/detection/run.py --model-size m --train --train-method contours
-python3 /app/container/detection/run.py --model-size m --test --test-method contours
+#python3 /app/container/detection/run.py --model-size m --train --train-method contours
+#python3 /app/container/detection/run.py --model-size m --test --test-method contours
 ### Large size
-python3 /app/container/detection/run.py --model-size l --train --train-method contours
-python3 /app/container/detection/run.py --model-size l --test --test-method contours
+#python3 /app/container/detection/run.py --model-size l --train --train-method contours
+#python3 /app/container/detection/run.py --model-size l --test --test-method contours
 ### Extra large size
-python3 /app/container/detection/run.py --model-size x --train --train-method contours
-python3 /app/container/detection/run.py --model-size x --test --test-method contours
+#python3 /app/container/detection/run.py --model-size x --train --train-method contours
+#python3 /app/container/detection/run.py --model-size x --test --test-method contours
 
 ## Train test loops for autodistil based detection
 ## Nano size

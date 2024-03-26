@@ -73,30 +73,30 @@ class ModelControler():
             print("Invalid autolabeling method")
             exit(1)
 
-    # Function to train and validate the YOLOv8 model using the contour dataset
-    def train_val_contour(self):
+    # Function to train and validate the YOLOv8 model using the contour mask dataset
+    def train_val_contour_mask(self):
         # Define the dataset configuration
-        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+        contour_ds = self.opt.dataset_root + '/contour-mask-det/config.yaml'
 
         # Initialize a new run and load the YOLOv8 model depending on the size 
         if self.opt.model_size == 'n':
-            model_name = 'YOLOv8n-contour-train-val'
+            model_name = 'YOLOv8n-contour-mask-train-val'
             self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8n.pt')
         elif self.opt.model_size == 's':
-            model_name = 'YOLOv8s-contour-train-val'
+            model_name = 'YOLOv8s-contour-mask-train-val'
             self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8s.pt')
         elif self.opt.model_size == 'm':
-            model_name = 'YOLOv8m-contour-train-val'
+            model_name = 'YOLOv8m-contour-mask-train-val'
             self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8m.pt')
         elif self.opt.model_size == 'l':
-            model_name = 'YOLOv8l-contour-train-val'
+            model_name = 'YOLOv8l-contour-mask-train-val'
             self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8l.pt')
         elif self.opt.model_size == 'x':
-            model_name = 'YOLOv8x-contour-train-val'
+            model_name = 'YOLOv8x-contour-mask-train-val'
             self.initialize_new_run(model_name)
             train_model = YOLO('/app/container/detection/weights/yolov8x.pt')
         else:
@@ -129,11 +129,11 @@ class ModelControler():
         wandb.finish()
 
 
-    # Function to test the YOLOv8 model using the contour dataset
-    def test_contour(self):
+    # Function to test the YOLOv8 model using the contour mask dataset
+    def test_contour_mask(self):
         # Find out latest run folder
         directory_path = '/app/container/detection'
-        directories = [os.path.join(directory_path, d) for d in os.listdir(directory_path) if 'YOLOv8' in d and 'train-val' in d]
+        directories = [os.path.join(directory_path, d) for d in os.listdir(directory_path) if 'YOLOv8' in d and 'contour-mask-train-val' in d]
         latest_train_run = max(directories, key=os.path.getctime)
 
         print(latest_train_run)
@@ -145,7 +145,7 @@ class ModelControler():
         self.initialize_new_run(test_run_name)
 
         # Define the dataset configuration
-        contour_ds = self.opt.dataset_root + '/contour-det/config.yaml'
+        contour_ds = self.opt.dataset_root + '/contour-mask-det/config.yaml'
 
         # Load the best YOLOv8 model
         test_model = YOLO(os.path.join(latest_train_run + '/weights/best.pt'))
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     options.add_argument('--prepare', action='store_true', help='Prepare the dataset')
     options.add_argument('--resize-prepared', action='store_true', help='Resize the images and masks')
     options.add_argument('--resize-prepared-preserve-aspect-ratio', action='store_true', help='Resize the images and masks while preserving aspect ratio')
-    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(512,512), help='Size of the image (height, width)')
+    options.add_argument('--resize-prepared-size', type=lambda x: tuple(map(int, x.split(','))), default=(640,640), help='Size of the image (height, width)')
     # Autolabeling control
     options.add_argument('--autolabel', action='store_true', help='Autolabel the dataset')
     options.add_argument('--autolabel-method', type=str, default='contours', help='Method to use for autolabeling can be either: rawcontours/autodistil')
@@ -402,34 +402,34 @@ if __name__ == "__main__":
 
     # Prepare the dataset
     if opt.prepare:
-        print("Preparing the detection dataset...")
+        print("\nPreparing the detection dataset...")
         model_controler.prepare_dataset_folder()
 
     # Autolabel the dataset
     if opt.autolabel:
-        print("Autolabeling the detection dataset...")
+        print("\nAutolabeling the detection dataset...")
         model_controler.autolabel_dataset()
 
     # Train the model and generate the weights
     if opt.train == True:
         if opt.train_method == 'contours':
-            print("Training the detection model using contours...")
-            model_controler.train_val_contour()
+            print("\nTraining the detection model using contours...")
+            model_controler.train_val_contour_mask()
 
         if opt.train_method == 'autodistil':
-            print("Training the detection model using autodistil...")
+            print("\nTraining the detection model using autodistil...")
             model_controler.train_val_autodistil()
 
     # Test the model and evaluate it
     if opt.test == True:
         if opt.test_method == 'pretrained':
-            print("Testing the pretrained detection model...")
+            print("\nTesting the pretrained detection model...")
             model_controler.test_pretrained()
 
         if opt.test_method == 'contours':
-            print("Testing the contour trained detection model...")
-            model_controler.test_contour()
+            print("\nTesting the contour trained detection model...")
+            model_controler.test_contour_mask()
 
         if opt.test_method == 'autodistil':
-            print("Testing the autodistil trained detection model...")
+            print("\nTesting the autodistil trained detection model...")
             model_controler.test_autodistil()
